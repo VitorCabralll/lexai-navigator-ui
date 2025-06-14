@@ -18,6 +18,8 @@ import NotFound from "./pages/NotFound";
 import Welcome from "./pages/onboarding/Welcome";
 import WorkspaceQuestion from "./pages/onboarding/WorkspaceQuestion";
 import CreateWorkspace from "./pages/onboarding/CreateWorkspace";
+import { OnboardingTourProvider } from "@/contexts/OnboardingTourContext";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 const queryClient = new QueryClient();
 
@@ -26,27 +28,30 @@ const App = () => (
     <AuthProvider>
       <WorkspaceProvider>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/onboarding" element={<Welcome />} />
-              <Route path="/onboarding/workspace-question" element={<WorkspaceQuestion />} />
-              <Route path="/onboarding/create-workspace" element={<CreateWorkspace />} />
-              <Route element={<Layout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/workspace" element={<Workspace />} />
-                <Route path="/agents" element={<Agents />} />
-                <Route path="/agents/create" element={<CreateAgent />} />
-                <Route path="/generate" element={<Generate />} />
-                <Route path="/settings" element={<Settings />} />
-              </Route>
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <OnboardingTourProvider>
+            <Toaster />
+            <Sonner />
+            <OnboardingTour />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/onboarding" element={<Welcome />} />
+                <Route path="/onboarding/workspace-question" element={<WorkspaceQuestion />} />
+                <Route path="/onboarding/create-workspace" element={<CreateWorkspace />} />
+                <Route element={<Layout />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/workspace" element={<Workspace />} />
+                  <Route path="/agents" element={<Agents />} />
+                  <Route path="/agents/create" element={<CreateAgent />} />
+                  <Route path="/generate" element={<Generate />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </OnboardingTourProvider>
         </TooltipProvider>
       </WorkspaceProvider>
     </AuthProvider>
