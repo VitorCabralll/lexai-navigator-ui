@@ -1,153 +1,175 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Users } from "lucide-react";
+import { Plus, Building2, Scale, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export default function Workspace() {
-  const [workspaceName, setWorkspaceName] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
+interface Workspace {
+  id: string;
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor: string;
+  agentCount: number;
+  createdAt: string;
+}
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Aqui você implementaria a lógica para criar o workspace
-    console.log({ workspaceName, description, category });
+const mockWorkspaces: Workspace[] = [
+  {
+    id: "1",
+    name: "Escritório",
+    icon: Building2,
+    iconColor: "text-green-500",
+    agentCount: 0,
+    createdAt: "Criado há 2 dias"
+  },
+  {
+    id: "2", 
+    name: "20° Promotoria",
+    icon: Scale,
+    iconColor: "text-blue-500",
+    agentCount: 1,
+    createdAt: "Criado há 1 semana"
+  }
+];
+
+export default function Workspace() {
+  const [workspaces, setWorkspaces] = useState<Workspace[]>(mockWorkspaces);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState("");
+
+  const handleCreateWorkspace = () => {
+    if (newWorkspaceName.trim()) {
+      const newWorkspace: Workspace = {
+        id: Date.now().toString(),
+        name: newWorkspaceName,
+        icon: Building2,
+        iconColor: "text-purple-500",
+        agentCount: 0,
+        createdAt: "Criado agora"
+      };
+      setWorkspaces([...workspaces, newWorkspace]);
+      setNewWorkspaceName("");
+      setIsCreateOpen(false);
+    }
+  };
+
+  const handleDeleteWorkspace = (id: string) => {
+    setWorkspaces(workspaces.filter(w => w.id !== id));
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">Criar Workspace</h1>
-          <p className="text-muted-foreground">
-            Configure um novo workspace para organizar seus projetos jurídicos
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Configurações do Workspace
-              </CardTitle>
-              <CardDescription>
-                Defina as informações básicas do seu workspace
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="workspace-name">Nome do Workspace</Label>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Ambientes de Trabalho
+            </h1>
+            <p className="text-gray-600">
+              Gerencie seus ambientes e organize seus agentes de IA
+            </p>
+          </div>
+          
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="mr-2 h-4 w-4" />
+                Criar Ambiente
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Criar Novo Ambiente</DialogTitle>
+                <DialogDescription>
+                  Defina um nome para o seu novo ambiente de trabalho
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="workspace-name">Nome do Ambiente</Label>
                   <Input
                     id="workspace-name"
-                    placeholder="Ex: Direito Empresarial"
-                    value={workspaceName}
-                    onChange={(e) => setWorkspaceName(e.target.value)}
-                    required
+                    placeholder="Ex: Escritório, Promotoria..."
+                    value={newWorkspaceName}
+                    onChange={(e) => setNewWorkspaceName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCreateWorkspace()}
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="category">Categoria</Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="empresarial">Direito Empresarial</SelectItem>
-                      <SelectItem value="civil">Direito Civil</SelectItem>
-                      <SelectItem value="trabalhista">Direito Trabalhista</SelectItem>
-                      <SelectItem value="tributario">Direito Tributário</SelectItem>
-                      <SelectItem value="penal">Direito Penal</SelectItem>
-                      <SelectItem value="administrativo">Direito Administrativo</SelectItem>
-                      <SelectItem value="outros">Outros</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descrição</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Descreva o propósito e escopo deste workspace..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="flex gap-4">
-                  <Button type="submit">Criar Workspace</Button>
-                  <Button type="button" variant="outline" asChild>
-                    <Link to="/dashboard">Cancelar</Link>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleCreateWorkspace}>
+                    Criar
                   </Button>
                 </div>
-              </form>
-            </CardContent>
-          </Card>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Dicas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm">
-              <div>
-                <h4 className="font-medium mb-2">Nome do Workspace</h4>
-                <p className="text-muted-foreground">
-                  Escolha um nome descritivo que facilite a identificação do workspace.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Categorização</h4>
-                <p className="text-muted-foreground">
-                  A categoria ajuda a organizar e filtrar seus workspaces por área de atuação.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Descrição</h4>
-                <p className="text-muted-foreground">
-                  Uma boa descrição ajuda outros membros da equipe a entenderem o propósito do workspace.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Workspaces Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {workspaces.map((workspace) => (
+            <Card key={workspace.id} className="group hover:shadow-lg transition-shadow duration-200 bg-white border border-gray-200">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`p-3 rounded-lg bg-gray-50 ${workspace.iconColor}`}>
+                    <workspace.icon className="h-6 w-6" />
+                  </div>
+                  <button
+                    onClick={() => handleDeleteWorkspace(workspace.id)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded"
+                  >
+                    <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                  </button>
+                </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Workspaces Existentes</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="p-3 border rounded-lg">
-                <h4 className="font-medium">Contratos Comerciais</h4>
-                <p className="text-xs text-muted-foreground">Direito Empresarial</p>
-              </div>
-              <div className="p-3 border rounded-lg">
-                <h4 className="font-medium">Litígios Trabalhistas</h4>
-                <p className="text-xs text-muted-foreground">Direito Trabalhista</p>
-              </div>
-              <div className="p-3 border rounded-lg">
-                <h4 className="font-medium">Consultoria Tributária</h4>
-                <p className="text-xs text-muted-foreground">Direito Tributário</p>
-              </div>
-            </CardContent>
-          </Card>
+                <h3 className="font-semibold text-gray-900 mb-2 text-lg">
+                  {workspace.name}
+                </h3>
+
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Agentes</span>
+                    <Badge variant="secondary" className="bg-gray-100 text-gray-700">
+                      {workspace.agentCount}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-gray-500">{workspace.createdAt}</p>
+                </div>
+
+                <Button asChild className="w-full bg-gray-900 hover:bg-gray-800">
+                  <Link to={`/dashboard?workspace=${workspace.id}`}>
+                    Abrir Ambiente
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </div>
+
+        {workspaces.length === 0 && (
+          <div className="text-center py-12">
+            <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Nenhum ambiente criado
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Crie seu primeiro ambiente de trabalho para organizar seus agentes
+            </p>
+            <Button onClick={() => setIsCreateOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Primeiro Ambiente
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
