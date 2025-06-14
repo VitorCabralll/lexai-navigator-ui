@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -14,6 +13,7 @@ import { GenerationProgress } from "@/components/GenerationProgress";
 import { PromptGrid } from "@/components/PromptGrid";
 import { ExpandableDocument } from "@/components/ExpandableDocument";
 import { PREDEFINED_PROMPTS } from "@/types/prompts";
+import { Toaster } from "@/components/ui/toaster";
 
 interface UploadedFile {
   id: string;
@@ -130,169 +130,172 @@ Documento gerado automaticamente pelo LexAI`;
   const canGenerate = mode === 'agent' ? selectedAgent && instructions : selectedPromptId;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">Gerar Documento Jurídico</h1>
-          <p className="text-muted-foreground">
-            Use agentes inteligentes ou prompts predefinidos para criar documentos
-          </p>
+    <>
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/dashboard">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Gerar Documento Jurídico</h1>
+            <p className="text-muted-foreground">
+              Use agentes inteligentes ou prompts predefinidos para criar documentos
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Configuração do Documento
-            </CardTitle>
-            <CardDescription>
-              Escolha como gerar seu documento jurídico
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Mode Selection with Radio Group */}
-            <div className="space-y-3">
-              <Label>Modo de Geração</Label>
-              <RadioGroup value={mode} onValueChange={(value) => setMode(value as "agent" | "prompt")}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="agent" id="agent" />
-                  <Label htmlFor="agent" className="flex items-center gap-2 cursor-pointer">
-                    <Bot className="h-4 w-4" />
-                    Usar Agente Inteligente
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="prompt" id="prompt" />
-                  <Label htmlFor="prompt" className="flex items-center gap-2 cursor-pointer">
-                    <Zap className="h-4 w-4" />
-                    Usar Prompt Predefinido
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {mode === "agent" && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="agent">Selecionar Agente Inteligente</Label>
-                  <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Escolha um agente do seu ambiente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="official-header" disabled className="text-xs font-medium">
-                        AGENTES OFICIAIS
-                      </SelectItem>
-                      {officialAgents.map((agent) => (
-                        <SelectItem key={agent.id} value={agent.id}>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                              OFICIAL
-                            </span>
-                            {agent.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                      {workspaceAgents.length > 0 && (
-                        <>
-                          <SelectItem value="my-agents-header" disabled className="text-xs font-medium mt-2">
-                            MEUS AGENTES
-                          </SelectItem>
-                          {workspaceAgents.map((agent) => (
-                            <SelectItem key={agent.id} value={agent.id}>
-                              {agent.name} - {agent.theme}
-                            </SelectItem>
-                          ))}
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="instructions">Instruções de Ajuste Fino</Label>
-                  <Textarea
-                    id="instructions"
-                    placeholder="Adicione instruções específicas para complementar o prompt do agente..."
-                    value={instructions}
-                    onChange={(e) => setInstructions(e.target.value)}
-                    rows={4}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Estas instruções complementam o prompt mestre do agente selecionado
-                  </p>
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="transition-all hover:shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Configuração do Documento
+              </CardTitle>
+              <CardDescription>
+                Escolha como gerar seu documento jurídico
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Mode Selection with Radio Group */}
+              <div className="space-y-3">
+                <Label>Modo de Geração</Label>
+                <RadioGroup value={mode} onValueChange={(value) => setMode(value as "agent" | "prompt")}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="agent" id="agent" />
+                    <Label htmlFor="agent" className="flex items-center gap-2 cursor-pointer">
+                      <Bot className="h-4 w-4" />
+                      Usar Agente Inteligente
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="prompt" id="prompt" />
+                    <Label htmlFor="prompt" className="flex items-center gap-2 cursor-pointer">
+                      <Zap className="h-4 w-4" />
+                      Usar Prompt Predefinido
+                    </Label>
+                  </div>
+                </RadioGroup>
               </div>
-            )}
 
-            {mode === "prompt" && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Selecione o Tipo de Documento</Label>
-                  <PromptGrid 
-                    selectedPromptId={selectedPromptId}
-                    onPromptSelect={handlePromptSelect}
-                  />
-                </div>
-
-                {selectedPromptId && (
+              {mode === "agent" && (
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="additional-instructions">Instruções Adicionais</Label>
+                    <Label htmlFor="agent">Selecionar Agente Inteligente</Label>
+                    <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Escolha um agente do seu ambiente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="official-header" disabled className="text-xs font-medium">
+                          AGENTES OFICIAIS
+                        </SelectItem>
+                        {officialAgents.map((agent) => (
+                          <SelectItem key={agent.id} value={agent.id}>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                                OFICIAL
+                              </span>
+                              {agent.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                        {workspaceAgents.length > 0 && (
+                          <>
+                            <SelectItem value="my-agents-header" disabled className="text-xs font-medium mt-2">
+                              MEUS AGENTES
+                            </SelectItem>
+                            {workspaceAgents.map((agent) => (
+                              <SelectItem key={agent.id} value={agent.id}>
+                                {agent.name} - {agent.theme}
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="instructions">Instruções de Ajuste Fino</Label>
                     <Textarea
-                      id="additional-instructions"
-                      placeholder="Exemplo: Trate do art. 6º da Lei de Improbidade e relacione ao caso da empresa X..."
-                      value={additionalInstructions}
-                      onChange={(e) => setAdditionalInstructions(e.target.value)}
-                      rows={3}
+                      id="instructions"
+                      placeholder="Adicione instruções específicas para complementar o prompt do agente..."
+                      value={instructions}
+                      onChange={(e) => setInstructions(e.target.value)}
+                      rows={4}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Instruções específicas para ajustar o documento às suas necessidades
+                      Estas instruções complementam o prompt mestre do agente selecionado
                     </p>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {mode === "prompt" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Selecione o Tipo de Documento</Label>
+                    <PromptGrid 
+                      selectedPromptId={selectedPromptId}
+                      onPromptSelect={handlePromptSelect}
+                    />
+                  </div>
+
+                  {selectedPromptId && (
+                    <div className="space-y-2">
+                      <Label htmlFor="additional-instructions">Instruções Adicionais</Label>
+                      <Textarea
+                        id="additional-instructions"
+                        placeholder="Exemplo: Trate do art. 6º da Lei de Improbidade e relacione ao caso da empresa X..."
+                        value={additionalInstructions}
+                        onChange={(e) => setAdditionalInstructions(e.target.value)}
+                        rows={3}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Instruções específicas para ajustar o documento às suas necessidades
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <FileUpload
+                onSupportFilesChange={setSupportFiles}
+                onTemplateFileChange={setTemplateFile}
+                onStrictModeChange={setStrictMode}
+                strictMode={strictMode}
+              />
+
+              <Button 
+                onClick={handleGenerate} 
+                disabled={!canGenerate || isGenerating}
+                className="w-full transition-all hover:scale-105"
+                size="lg"
+              >
+                {isGenerating ? "Gerando..." : "Gerar Documento com IA"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-6">
+            {isGenerating && (
+              <GenerationProgress
+                isGenerating={isGenerating}
+                onComplete={handleGenerationComplete}
+              />
             )}
 
-            <FileUpload
-              onSupportFilesChange={setSupportFiles}
-              onTemplateFileChange={setTemplateFile}
-              onStrictModeChange={setStrictMode}
-              strictMode={strictMode}
+            <ExpandableDocument
+              content={generatedContent}
+              onContentChange={setGeneratedContent}
+              title={documentTitle || "Documento Jurídico"}
             />
-
-            <Button 
-              onClick={handleGenerate} 
-              disabled={!canGenerate || isGenerating}
-              className="w-full"
-              size="lg"
-            >
-              {isGenerating ? "Gerando..." : "Gerar Documento com IA"}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          {isGenerating && (
-            <GenerationProgress
-              isGenerating={isGenerating}
-              onComplete={handleGenerationComplete}
-            />
-          )}
-
-          <ExpandableDocument
-            content={generatedContent}
-            onContentChange={setGeneratedContent}
-            title={documentTitle || "Documento Jurídico"}
-          />
+          </div>
         </div>
       </div>
-    </div>
+      <Toaster />
+    </>
   );
 }
