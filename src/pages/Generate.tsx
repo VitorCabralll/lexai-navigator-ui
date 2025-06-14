@@ -15,6 +15,14 @@ import { PromptGrid } from "@/components/PromptGrid";
 import { ExpandableDocument } from "@/components/ExpandableDocument";
 import { PREDEFINED_PROMPTS } from "@/types/prompts";
 
+interface UploadedFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  content?: string;
+}
+
 export default function Generate() {
   const { agents, officialAgents, selectedWorkspace } = useWorkspace();
   const [mode, setMode] = useState<"agent" | "prompt">("agent");
@@ -22,7 +30,8 @@ export default function Generate() {
   const [instructions, setInstructions] = useState("");
   const [selectedPromptId, setSelectedPromptId] = useState("");
   const [additionalInstructions, setAdditionalInstructions] = useState("");
-  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [supportFiles, setSupportFiles] = useState<UploadedFile[]>([]);
+  const [templateFile, setTemplateFile] = useState<UploadedFile | null>(null);
   const [strictMode, setStrictMode] = useState(false);
   const [generatedContent, setGeneratedContent] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -62,6 +71,11 @@ Este documento foi elaborado com base nas instruções fornecidas e nos document
 INSTRUÇÕES DE AJUSTE FINO:
 ${instructions}
 
+DOCUMENTOS DE APOIO ANALISADOS:
+${supportFiles.length > 0 ? supportFiles.map(f => `- ${f.name}`).join('\n') : 'Nenhum documento de apoio fornecido.'}
+
+${templateFile ? `MODELO DE REFERÊNCIA UTILIZADO: ${templateFile.name}` : ''}
+
 1. CONSIDERAÇÕES INICIAIS
 Com base na análise dos documentos anexados e no conhecimento jurídico especializado...
 
@@ -71,7 +85,7 @@ ${instructions || 'Análise jurídica detalhada será desenvolvida conforme o ca
 3. CONCLUSÃO
 Pelos fundamentos expostos, conclui-se que...
 
-${strictMode ? '\n[Documento gerado em MODO RIGOROSO - seguindo exatamente o modelo fornecido]' : ''}
+${strictMode && templateFile ? '\n[Documento gerado em MODO RIGOROSO - seguindo exatamente o modelo fornecido]' : ''}
 
 ---
 Documento gerado automaticamente pelo LexAI usando agente inteligente`;
@@ -82,6 +96,11 @@ Documento gerado automaticamente pelo LexAI usando agente inteligente`;
 Tipo: ${prompt?.name || 'Documento personalizado'}
 
 ${additionalInstructions ? `INSTRUÇÕES ADICIONAIS:\n${additionalInstructions}\n` : ''}
+
+DOCUMENTOS DE APOIO ANALISADOS:
+${supportFiles.length > 0 ? supportFiles.map(f => `- ${f.name}`).join('\n') : 'Nenhum documento de apoio fornecido.'}
+
+${templateFile ? `MODELO DE REFERÊNCIA UTILIZADO: ${templateFile.name}` : ''}
 
 1. CONSIDERAÇÕES INICIAIS
 Este documento foi elaborado seguindo os padrões específicos para ${prompt?.name.toLowerCase() || 'documentos jurídicos'}...
@@ -95,7 +114,7 @@ Com base na doutrina e jurisprudência aplicáveis...
 4. CONCLUSÃO
 Pelos fundamentos expostos...
 
-${strictMode ? '\n[Documento gerado em MODO RIGOROSO - seguindo exatamente o modelo fornecido]' : ''}
+${strictMode && templateFile ? '\n[Documento gerado em MODO RIGOROSO - seguindo exatamente o modelo fornecido]' : ''}
 
 ---
 Documento gerado automaticamente pelo LexAI`;
@@ -242,7 +261,8 @@ Documento gerado automaticamente pelo LexAI`;
             )}
 
             <FileUpload
-              onFilesChange={setUploadedFiles}
+              onSupportFilesChange={setSupportFiles}
+              onTemplateFileChange={setTemplateFile}
               onStrictModeChange={setStrictMode}
               strictMode={strictMode}
             />
