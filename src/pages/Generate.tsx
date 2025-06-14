@@ -122,7 +122,7 @@ Documento gerado automaticamente pelo LexAI
                       <SelectValue placeholder="Escolha um agente do seu ambiente" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem disabled className="text-xs font-medium">
+                      <SelectItem value="official-header" disabled className="text-xs font-medium">
                         AGENTES OFICIAIS
                       </SelectItem>
                       {officialAgents.map((agent) => (
@@ -137,7 +137,7 @@ Documento gerado automaticamente pelo LexAI
                       ))}
                       {workspaceAgents.length > 0 && (
                         <>
-                          <SelectItem disabled className="text-xs font-medium mt-2">
+                          <SelectItem value="my-agents-header" disabled className="text-xs font-medium mt-2">
                             MEUS AGENTES
                           </SelectItem>
                           {workspaceAgents.map((agent) => (
