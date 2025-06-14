@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,13 +5,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Bell, Shield, CreditCard } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ArrowLeft, User, Bell, Shield, CreditCard, Palette } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function Settings() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(false);
   const [twoFactorAuth, setTwoFactorAuth] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   return (
     <div className="space-y-6">
@@ -35,6 +37,10 @@ export default function Settings() {
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Perfil
+          </TabsTrigger>
+          <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            Aparência
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
@@ -86,6 +92,48 @@ export default function Settings() {
               </div>
 
               <Button>Salvar Alterações</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="appearance">
+          <Card>
+            <CardHeader>
+              <CardTitle>Preferências de Aparência</CardTitle>
+              <CardDescription>
+                Personalize a aparência da interface do LexAI
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <Label className="text-base font-medium">Tema</Label>
+                <RadioGroup value={theme} onValueChange={(value) => setTheme(value as "light" | "dark")}>
+                  <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                    <RadioGroupItem value="light" id="light" />
+                    <div className="flex-1">
+                      <Label htmlFor="light" className="font-medium">Modo Claro</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Interface com fundo claro e textos escuros
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                    <RadioGroupItem value="dark" id="dark" />
+                    <div className="flex-1">
+                      <Label htmlFor="dark" className="font-medium">Modo Escuro</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Interface com fundo escuro e textos claros
+                      </p>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
+                  As alterações são aplicadas automaticamente
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
