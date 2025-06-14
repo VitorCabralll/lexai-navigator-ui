@@ -1,16 +1,8 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
-import { 
-  User, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 
 interface AuthContextType {
-  user: User | null;
+  user: any | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
@@ -20,28 +12,21 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
+  const [user, setUser] = useState<any>({ email: 'teste@exemplo.com', uid: 'test-user' });
+  const [loading, setLoading] = useState(false);
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    // Simular login
+    setUser({ email, uid: 'test-user' });
   };
 
   const signUp = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+    // Simular registro
+    setUser({ email, uid: 'test-user' });
   };
 
   const logout = async () => {
-    await signOut(auth);
+    setUser(null);
   };
 
   const value = {

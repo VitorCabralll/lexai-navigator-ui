@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,7 +12,6 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -21,27 +19,19 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-    try {
+    // Simular autenticação para testes
+    setTimeout(() => {
+      toast({
+        title: isSignUp ? "Conta criada com sucesso!" : "Login realizado!",
+        description: "Bem-vindo ao LexAI",
+      });
       if (isSignUp) {
-        await signUp(email, password);
-        toast({
-          title: "Conta criada com sucesso!",
-          description: "Bem-vindo ao LexAI",
-        });
         navigate("/onboarding");
       } else {
-        await signIn(email, password);
         navigate("/dashboard");
       }
-    } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Ocorreu um erro durante a autenticação",
-        variant: "destructive",
-      });
-    } finally {
       setLoading(false);
-    }
+    }, 1000);
   };
 
   return (
