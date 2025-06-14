@@ -2,21 +2,26 @@
 export interface Agent {
   id: string;
   name: string;
-  type: string;
+  description: string;
   theme: string;
   workspaceId: string;
   masterPrompt?: string;
-  isOfficial: boolean;
-  documentTemplate?: TemplateRef;
+  documentTemplate?: DocumentTemplate;
   createdAt: FirebaseFirestore.Timestamp;
   updatedAt: FirebaseFirestore.Timestamp;
+  createdBy: string;
 }
 
-export interface TemplateRef {
+export interface DocumentTemplate {
   fileUrl: string;
   fileName: string;
   structure: DocumentStructure;
   variables: string[];
+  metadata?: {
+    textLength: number;
+    sectionsFound: number;
+    variablesFound: number;
+  };
 }
 
 export interface DocumentStructure {
@@ -29,6 +34,8 @@ export interface Section {
   type: 'header' | 'body' | 'conclusion';
   required: boolean;
   order: number;
+  startLine?: number;
+  content?: string;
 }
 
 export interface DocumentStyle {
@@ -41,4 +48,13 @@ export interface DocumentStyle {
     left: number;
     right: number;
   };
+}
+
+export interface ProcessingMetadata {
+  textLength: number;
+  sectionsFound: number;
+  variablesFound: number;
+  processingTime: number;
+  fileSize?: number;
+  fileName?: string;
 }
