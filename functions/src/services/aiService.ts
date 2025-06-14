@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import * as admin from 'firebase-admin';
 import { GenerationRequest, ProcessingStep, DocumentSection } from '../types/document';
 import { Agent } from '../types/agent';
-import { PipelineRequest, PipelineResult, EtapaProcessamento, DocumentoApoio } from '../types/pipeline';
+import { PipelineRequest, PipelineResult, EtapaProcessamento, DocumentoApoio, ExecutarPromptRequest, PromptPredefinido } from '../types/pipeline';
 import { DocumentProcessor } from './documentProcessor';
 
 export class AIService {
@@ -14,6 +14,87 @@ export class AIService {
       apiKey: process.env.OPENAI_API_KEY
     });
     this.documentProcessor = new DocumentProcessor();
+  }
+
+  async executarPromptPredefinido(
+    promptId: string,
+    instrucoes: string,
+    documentos: DocumentoApoio[]
+  ): Promise<string> {
+    const inicioProcessamento = Date.now();
+    
+    try {
+      // 1. Buscar prompt predefinido no Firestore
+      const promptDoc = await admin.firestore().collection('prompts').doc(promptId).get();
+      
+      if (!promptDoc.exists) {
+        throw new Error(`Prompt predefinido não encontrado: ${promptId}`);
+      }
+      
+      const promptData = promptDoc.data() as PromptPredefinido;
+      
+      if (!promptData.active) {
+        throw new Error(`Prompt predefinido está inativo: ${promptId}`);
+      }
+
+      // 2. Processar e resumir documentos de apoio
+      const documentosResumo = await this.documentProcessor.processarDocumentos(documentos);
+      const contextoDocs = documentosResumo.length > 0 
+        ? `\n\nDOCUMENTOS DE APOIO:\n${documentosResumo.join('\n\n')}`
+        : '';
+
+      // 3. Montar prompt final
+      const promptFinal = this.montarPromptFinal(promptData.basePrompt, instrucoes, contextoDocs);
+
+      // 4. Executar com GPT-4o
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: promptFinal }],
+        max_tokens: 4000,
+        temperature: 0.1
+      });
+
+      const textoGerado = response.choices[0].message.content || '';
+      
+      // 5. Log de controle
+      const tempoTotal = Date.now() - inicioProcessamento;
+      const tokensUsados = response.usage?.total_tokens || 0;
+      
+      console.log(`Prompt predefinido executado: ${promptId}`);
+      console.log(`Tokens usados: ${tokensUsados}`);
+      console.log(`Tempo: ${tempoTotal}ms`);
+
+      return textoGerado;
+
+    } catch (error) {
+      console.error('Erro ao executar prompt predefinido:', error);
+      throw error;
+    }
+  }
+
+  private montarPromptFinal(basePrompt: string, instrucoes: string, contextoDocs: string): string {
+    return `${basePrompt}${contextoDocs}
+
+INSTRUÇÕES ESPECÍFICAS:
+${instrucoes}
+
+Gere o documento jurídico completo, profissional e tecnicamente correto seguindo as instruções fornecidas.`;
+  }
+
+  private async buscarPromptPredefinido(promptId: string): Promise<PromptPredefinido> {
+    const promptDoc = await admin.firestore().collection('prompts').doc(promptId).get();
+    
+    if (!promptDoc.exists) {
+      throw new Error('Prompt predefinido não encontrado');
+    }
+    
+    const promptData = promptDoc.data() as PromptPredefinido;
+    
+    if (!promptData.active) {
+      throw new Error('Prompt predefinido está inativo');
+    }
+    
+    return promptData;
   }
 
   async executarPipelineIA(

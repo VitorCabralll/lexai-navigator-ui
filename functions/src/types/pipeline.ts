@@ -37,3 +37,20 @@ export interface EtapaProcessamento {
   tempoInicio: number;
   tempoFim: number;
 }
+
+export interface ExecutarPromptRequest {
+  promptId: string;
+  instrucoes: string;
+  documentos: DocumentoApoio[];
+}
+
+export interface PromptPredefinido {
+  id: string;
+  name: string;
+  description: string;
+  basePrompt: string;
+  category: string;
+  active: boolean;
+  createdAt: FirebaseFirestore.Timestamp;
+  updatedAt: FirebaseFirestore.Timestamp;
+}
