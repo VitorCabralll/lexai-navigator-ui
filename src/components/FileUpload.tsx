@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, FileText, X, Eye, Loader2 } from "lucide-react";
-import Tesseract from 'tesseract.js';
+import { createWorker } from 'tesseract.js';
 
 interface UploadedFile {
   id: string;
@@ -29,9 +28,9 @@ export function FileUpload({ onFilesChange, onStrictModeChange, strictMode }: Fi
 
   const performOCR = async (file: File): Promise<string> => {
     try {
-      const { data: { text } } = await Tesseract.recognize(file, 'por', {
-        logger: m => console.log(m)
-      });
+      const worker = await createWorker('por');
+      const { data: { text } } = await worker.recognize(file);
+      await worker.terminate();
       return text;
     } catch (error) {
       console.error('Erro no OCR:', error);
