@@ -8,6 +8,7 @@ admin.initializeApp();
 export { processarModeloDocx } from './functions/processarModeloDocx';
 export { gerarDocumentoComIA } from './functions/gerarDocumentoComIA';
 export { criarAgenteComPrompt } from './functions/criarAgenteComPrompt';
+export { listarAgentesWorkspace } from './functions/listarAgentesWorkspace';
 
 // Função de teste para verificar se o backend está funcionando
 export { onRequest } from 'firebase-functions/v2/https';
