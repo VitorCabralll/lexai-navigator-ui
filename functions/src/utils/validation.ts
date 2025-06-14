@@ -25,6 +25,27 @@ export const gerarDocumentoSchema = Joi.object({
   workspaceId: Joi.string().required()
 });
 
+export const criarAgenteSchema = Joi.object({
+  name: Joi.string().min(2).max(100).required(),
+  theme: Joi.string().min(2).max(200).required(),
+  description: Joi.string().max(500).optional(),
+  workspaceId: Joi.string().required(),
+  variables: Joi.array().items(Joi.string()).required(),
+  structure: Joi.array().items(Joi.object({
+    name: Joi.string().required(),
+    type: Joi.string().valid('header', 'body', 'conclusion').required(),
+    required: Joi.boolean().required(),
+    order: Joi.number().required(),
+    startLine: Joi.number().optional(),
+    content: Joi.string().optional()
+  })).required(),
+  extractedText: Joi.string().min(50).required(),
+  documentTemplate: Joi.object({
+    fileUrl: Joi.string().uri().required(),
+    fileName: Joi.string().required()
+  }).optional()
+});
+
 export function validateRequest(schema: Joi.ObjectSchema, data: any) {
   const { error, value } = schema.validate(data);
   if (error) {
