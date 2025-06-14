@@ -1,4 +1,3 @@
-
 import * as admin from 'firebase-admin';
 
 // Inicializar Firebase Admin
@@ -9,6 +8,7 @@ export { processarModeloDocx } from './functions/processarModeloDocx';
 export { gerarDocumentoComIA } from './functions/gerarDocumentoComIA';
 export { criarAgenteComPrompt } from './functions/criarAgenteComPrompt';
 export { listarAgentesWorkspace } from './functions/listarAgentesWorkspace';
+export { listarPromptsPublicos } from './functions/listarPromptsPublicos';
 
 // Função de teste para verificar se o backend está funcionando
 export { onRequest } from 'firebase-functions/v2/https';
