@@ -4,16 +4,19 @@ import { GenerationRequest, ProcessingStep, DocumentSection } from '../types/doc
 import { Agent } from '../types/agent';
 import { PipelineRequest, PipelineResult, EtapaProcessamento, DocumentoApoio, ExecutarPromptRequest, PromptPredefinido } from '../types/pipeline';
 import { DocumentProcessor } from './documentProcessor';
+import { DocumentService } from './documentService';
 
 export class AIService {
   private openai: OpenAI;
   private documentProcessor: DocumentProcessor;
+  private documentService: DocumentService;
 
   constructor() {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
     });
     this.documentProcessor = new DocumentProcessor();
+    this.documentService = new DocumentService();
   }
 
   async executarPromptPredefinido(
@@ -518,5 +521,84 @@ Gere o documento jurídico final completo, profissional e tecnicamente correto.`
     if (titleLower.includes('dispositivo') || titleLower.includes('conclusão')) return 'conclusion';
     
     return 'body';
+  }
+
+  // Método de conveniência para executar prompt e salvar documento
+  async executarPromptESalvar(
+    promptId: string,
+    instrucoes: string,
+    documentos: DocumentoApoio[],
+    uid: string,
+    workspaceId: string
+  ): Promise<{ textoGerado: string; documentId: string }> {
+    
+    const inicioProcessamento = Date.now();
+    
+    try {
+      // 1. Executar prompt predefinido
+      const textoGerado = await this.executarPromptPredefinido(promptId, instrucoes, documentos);
+      
+      // 2. Salvar documento
+      const tempoProcessamento = Date.now() - inicioProcessamento;
+      const resultado = await this.documentService.salvarDocumentoFinal(
+        uid,
+        workspaceId,
+        textoGerado,
+        'prompt',
+        {
+          promptId,
+          instrucoes,
+          tempoProcessamento
+        }
+      );
+      
+      return {
+        textoGerado,
+        documentId: resultado.documentId
+      };
+      
+    } catch (error) {
+      console.error('Erro ao executar prompt e salvar:', error);
+      throw error;
+    }
+  }
+
+  // Método de conveniência para executar pipeline e salvar documento
+  async executarPipelineESalvar(
+    agentId: string,
+    variaveis: Record<string, string>,
+    documentos: DocumentoApoio[],
+    instrucoes: string,
+    uid: string,
+    workspaceId: string
+  ): Promise<{ resultado: PipelineResult; documentId: string }> {
+    
+    try {
+      // 1. Executar pipeline IA
+      const resultado = await this.executarPipelineIA(agentId, variaveis, documentos, instrucoes);
+      
+      // 2. Salvar documento
+      const documentoSalvo = await this.documentService.salvarDocumentoFinal(
+        uid,
+        workspaceId,
+        resultado.textoFinal,
+        'agent',
+        {
+          agentId,
+          instrucoes,
+          tokensUsados: resultado.metadata.tokensUsados.total,
+          tempoProcessamento: resultado.metadata.tempoProcessamento
+        }
+      );
+      
+      return {
+        resultado,
+        documentId: documentoSalvo.documentId
+      };
+      
+    } catch (error) {
+      console.error('Erro ao executar pipeline e salvar:', error);
+      throw error;
+    }
   }
 }
