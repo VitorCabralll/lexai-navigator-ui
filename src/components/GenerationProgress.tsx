@@ -2,11 +2,12 @@
 import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
+import { FileText, Brain, PenTool, CheckCircle } from "lucide-react";
 
 interface GenerationStep {
   id: string;
   label: string;
-  icon: string;
+  Icon: React.ComponentType<{ className?: string }>;
   completed: boolean;
   active: boolean;
 }
@@ -18,10 +19,10 @@ interface GenerationProgressProps {
 
 export function GenerationProgress({ isGenerating, onComplete }: GenerationProgressProps) {
   const [steps, setSteps] = useState<GenerationStep[]>([
-    { id: 'reading', label: 'Lendo instruções', icon: '📄', completed: false, active: false },
-    { id: 'applying', label: 'Aplicando prompt', icon: '🧠', completed: false, active: false },
-    { id: 'writing', label: 'Redigindo', icon: '✍️', completed: false, active: false },
-    { id: 'finalizing', label: 'Finalizando', icon: '✅', completed: false, active: false }
+    { id: 'reading', label: 'Lendo documentos', Icon: FileText, completed: false, active: false },
+    { id: 'applying', label: 'Aplicando agente ou prompt predefinido', Icon: Brain, completed: false, active: false },
+    { id: 'writing', label: 'Redigindo texto jurídico', Icon: PenTool, completed: false, active: false },
+    { id: 'finalizing', label: 'Finalizando documento', Icon: CheckCircle, completed: false, active: false }
   ]);
 
   const [progress, setProgress] = useState(0);
@@ -68,9 +69,11 @@ export function GenerationProgress({ isGenerating, onComplete }: GenerationProgr
           <div className="space-y-3">
             {steps.map((step) => (
               <div key={step.id} className="flex items-center gap-3">
-                <div className={`text-lg ${step.active ? 'animate-pulse' : ''}`}>
-                  {step.icon}
-                </div>
+                <step.Icon className={`h-5 w-5 ${
+                  step.completed ? 'text-green-600' : 
+                  step.active ? 'text-primary animate-pulse' : 
+                  'text-muted-foreground'
+                }`} />
                 <span className={`text-sm ${
                   step.completed ? 'text-green-600 line-through' : 
                   step.active ? 'text-primary font-medium' : 
@@ -78,7 +81,7 @@ export function GenerationProgress({ isGenerating, onComplete }: GenerationProgr
                 }`}>
                   {step.label}
                 </span>
-                {step.completed && <span className="text-green-600 text-xs">✓</span>}
+                {step.completed && <CheckCircle className="h-4 w-4 text-green-600" />}
               </div>
             ))}
           </div>

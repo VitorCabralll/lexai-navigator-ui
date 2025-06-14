@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, FileText, X, Eye } from "lucide-react";
+import { Upload, FileText, X, Eye, Loader2 } from "lucide-react";
+import Tesseract from 'tesseract.js';
 
 interface UploadedFile {
   id: string;
@@ -24,25 +25,54 @@ interface FileUploadProps {
 export function FileUpload({ onFilesChange, onStrictModeChange, strictMode }: FileUploadProps) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingFile, setProcessingFile] = useState<string>("");
+
+  const performOCR = async (file: File): Promise<string> => {
+    try {
+      const { data: { text } } = await Tesseract.recognize(file, 'por', {
+        logger: m => console.log(m)
+      });
+      return text;
+    } catch (error) {
+      console.error('Erro no OCR:', error);
+      return `Erro ao processar ${file.name} com OCR`;
+    }
+  };
+
+  const readTextFile = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string || '');
+      reader.readAsText(file);
+    });
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(event.target.files || []);
     if (selectedFiles.length === 0) return;
 
     setIsProcessing(true);
-
     const newFiles: UploadedFile[] = [];
     
     for (const file of selectedFiles) {
-      // Simulate OCR processing
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setProcessingFile(file.name);
+      
+      let content = '';
+      
+      if (file.type.startsWith('image/')) {
+        content = await performOCR(file);
+      } else if (file.type === 'text/plain') {
+        content = await readTextFile(file);
+      } else {
+        content = `Arquivo ${file.name} carregado. Tipo: ${file.type}`;
+      }
       
       const uploadedFile: UploadedFile = {
         id: Math.random().toString(36).substring(7),
         name: file.name,
         size: file.size,
         type: file.type,
-        content: `Conteúdo extraído de ${file.name} via OCR simulado...`
+        content
       };
       
       newFiles.push(uploadedFile);
@@ -52,6 +82,7 @@ export function FileUpload({ onFilesChange, onStrictModeChange, strictMode }: Fi
     setFiles(updatedFiles);
     onFilesChange(updatedFiles);
     setIsProcessing(false);
+    setProcessingFile("");
   };
 
   const removeFile = (fileId: string) => {
@@ -130,8 +161,9 @@ export function FileUpload({ onFilesChange, onStrictModeChange, strictMode }: Fi
       )}
 
       {isProcessing && (
-        <div className="text-center text-sm text-muted-foreground">
-          🔍 Processando documentos com OCR...
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Processando {processingFile} com OCR...
         </div>
       )}
     </div>

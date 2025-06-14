@@ -5,25 +5,28 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, FileText, Download, Copy, Bot, Zap } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ArrowLeft, FileText, Bot, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { FileUpload } from "@/components/FileUpload";
 import { GenerationProgress } from "@/components/GenerationProgress";
-import { CommandInput } from "@/components/CommandInput";
+import { PromptGrid } from "@/components/PromptGrid";
+import { ExpandableDocument } from "@/components/ExpandableDocument";
+import { PREDEFINED_PROMPTS } from "@/types/prompts";
 
 export default function Generate() {
   const { agents, officialAgents, selectedWorkspace } = useWorkspace();
   const [mode, setMode] = useState<"agent" | "prompt">("agent");
   const [selectedAgent, setSelectedAgent] = useState("");
   const [instructions, setInstructions] = useState("");
-  const [promptCommand, setPromptCommand] = useState("");
   const [selectedPromptId, setSelectedPromptId] = useState("");
+  const [additionalInstructions, setAdditionalInstructions] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const [strictMode, setStrictMode] = useState(false);
   const [generatedContent, setGeneratedContent] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [documentTitle, setDocumentTitle] = useState("");
 
   const workspaceAgents = selectedWorkspace ? agents.filter(a => a.workspaceId === selectedWorkspace.id) : [];
   const allAgents = [...officialAgents, ...workspaceAgents];
@@ -31,28 +34,39 @@ export default function Generate() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     setGeneratedContent("");
+    
+    // Set document title based on mode
+    if (mode === 'prompt' && selectedPromptId) {
+      const prompt = PREDEFINED_PROMPTS.find(p => p.id === selectedPromptId);
+      setDocumentTitle(prompt?.name || 'Documento Jurídico');
+    } else if (mode === 'agent' && selectedAgent) {
+      const agent = allAgents.find(a => a.id === selectedAgent);
+      setDocumentTitle(`Documento - ${agent?.name || 'Agente'}`);
+    }
   };
 
   const handleGenerationComplete = () => {
     setIsGenerating(false);
-    // Simulate document generation
-    setGeneratedContent(`
-DOCUMENTO JURÍDICO GERADO
+    
+    // Generate content based on mode
+    let content = '';
+    if (mode === 'agent') {
+      const agent = allAgents.find(a => a.id === selectedAgent);
+      content = `DOCUMENTO JURÍDICO GERADO
 
-${mode === 'agent' ? 
-  `Gerado usando o agente: ${allAgents.find(a => a.id === selectedAgent)?.name || 'Agente selecionado'}` :
-  `Gerado usando prompt predefinido`
-}
+Gerado usando o agente: ${agent?.name || 'Agente selecionado'}
+Tema: ${agent?.theme || 'Não especificado'}
 
 Este documento foi elaborado com base nas instruções fornecidas e nos documentos anexados.
 
-CONTEÚDO PRINCIPAL:
+INSTRUÇÕES DE AJUSTE FINO:
+${instructions}
 
 1. CONSIDERAÇÕES INICIAIS
-${instructions || promptCommand}
+Com base na análise dos documentos anexados e no conhecimento jurídico especializado...
 
 2. FUNDAMENTAÇÃO JURÍDICA
-Com base na análise dos documentos anexados e na jurisprudência aplicável...
+${instructions || 'Análise jurídica detalhada será desenvolvida conforme o caso específico...'}
 
 3. CONCLUSÃO
 Pelos fundamentos expostos, conclui-se que...
@@ -60,19 +74,41 @@ Pelos fundamentos expostos, conclui-se que...
 ${strictMode ? '\n[Documento gerado em MODO RIGOROSO - seguindo exatamente o modelo fornecido]' : ''}
 
 ---
-Documento gerado automaticamente pelo LexAI
-    `);
+Documento gerado automaticamente pelo LexAI usando agente inteligente`;
+    } else {
+      const prompt = PREDEFINED_PROMPTS.find(p => p.id === selectedPromptId);
+      content = `${prompt?.name.toUpperCase() || 'DOCUMENTO JURÍDICO'}
+
+Tipo: ${prompt?.name || 'Documento personalizado'}
+
+${additionalInstructions ? `INSTRUÇÕES ADICIONAIS:\n${additionalInstructions}\n` : ''}
+
+1. CONSIDERAÇÕES INICIAIS
+Este documento foi elaborado seguindo os padrões específicos para ${prompt?.name.toLowerCase() || 'documentos jurídicos'}...
+
+2. DESENVOLVIMENTO
+${additionalInstructions || 'Conteúdo será desenvolvido conforme as especificações técnicas...'}
+
+3. FUNDAMENTAÇÃO JURÍDICA
+Com base na doutrina e jurisprudência aplicáveis...
+
+4. CONCLUSÃO
+Pelos fundamentos expostos...
+
+${strictMode ? '\n[Documento gerado em MODO RIGOROSO - seguindo exatamente o modelo fornecido]' : ''}
+
+---
+Documento gerado automaticamente pelo LexAI`;
+    }
+    
+    setGeneratedContent(content);
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(generatedContent);
-  };
-
-  const handlePromptSelect = (promptId: string, message: string) => {
+  const handlePromptSelect = (promptId: string) => {
     setSelectedPromptId(promptId);
   };
 
-  const canGenerate = mode === 'agent' ? selectedAgent && instructions : promptCommand;
+  const canGenerate = mode === 'agent' ? selectedAgent && instructions : selectedPromptId;
 
   return (
     <div className="space-y-6">
@@ -102,19 +138,29 @@ Documento gerado automaticamente pelo LexAI
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <Tabs value={mode} onValueChange={(value) => setMode(value as "agent" | "prompt")}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="agent" className="flex items-center gap-2">
-                  <Bot className="h-4 w-4" />
-                  Usar Agente
-                </TabsTrigger>
-                <TabsTrigger value="prompt" className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Prompt Predefinido
-                </TabsTrigger>
-              </TabsList>
+            {/* Mode Selection with Radio Group */}
+            <div className="space-y-3">
+              <Label>Modo de Geração</Label>
+              <RadioGroup value={mode} onValueChange={(value) => setMode(value as "agent" | "prompt")}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="agent" id="agent" />
+                  <Label htmlFor="agent" className="flex items-center gap-2 cursor-pointer">
+                    <Bot className="h-4 w-4" />
+                    Usar Agente Inteligente
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="prompt" id="prompt" />
+                  <Label htmlFor="prompt" className="flex items-center gap-2 cursor-pointer">
+                    <Zap className="h-4 w-4" />
+                    Usar Prompt Predefinido
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
 
-              <TabsContent value="agent" className="space-y-4">
+            {mode === "agent" && (
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="agent">Selecionar Agente Inteligente</Label>
                   <Select value={selectedAgent} onValueChange={setSelectedAgent}>
@@ -164,23 +210,36 @@ Documento gerado automaticamente pelo LexAI
                     Estas instruções complementam o prompt mestre do agente selecionado
                   </p>
                 </div>
-              </TabsContent>
+              </div>
+            )}
 
-              <TabsContent value="prompt" className="space-y-4">
+            {mode === "prompt" && (
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="prompt-command">Comando e Instruções</Label>
-                  <CommandInput
-                    value={promptCommand}
-                    onChange={setPromptCommand}
+                  <Label>Selecione o Tipo de Documento</Label>
+                  <PromptGrid 
+                    selectedPromptId={selectedPromptId}
                     onPromptSelect={handlePromptSelect}
-                    placeholder="Digite / para ver prompts disponíveis ou escreva suas instruções..."
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Use comandos como /parecer, /petição, /contrato seguidos de suas instruções
-                  </p>
                 </div>
-              </TabsContent>
-            </Tabs>
+
+                {selectedPromptId && (
+                  <div className="space-y-2">
+                    <Label htmlFor="additional-instructions">Instruções Adicionais</Label>
+                    <Textarea
+                      id="additional-instructions"
+                      placeholder="Exemplo: Trate do art. 6º da Lei de Improbidade e relacione ao caso da empresa X..."
+                      value={additionalInstructions}
+                      onChange={(e) => setAdditionalInstructions(e.target.value)}
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Instruções específicas para ajustar o documento às suas necessidades
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <FileUpload
               onFilesChange={setUploadedFiles}
@@ -207,43 +266,11 @@ Documento gerado automaticamente pelo LexAI
             />
           )}
 
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Documento Gerado</CardTitle>
-                  <CardDescription>
-                    Resultado da geração com IA
-                  </CardDescription>
-                </div>
-                {generatedContent && !isGenerating && (
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={handleCopy}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {generatedContent ? (
-                <div className="bg-muted p-4 rounded-lg">
-                  <pre className="whitespace-pre-wrap text-sm font-mono overflow-auto max-h-96">
-                    {generatedContent}
-                  </pre>
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground py-12">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>O documento gerado aparecerá aqui</p>
-                  <p className="text-sm">Configure os parâmetros e clique em "Gerar Documento"</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ExpandableDocument
+            content={generatedContent}
+            onContentChange={setGeneratedContent}
+            title={documentTitle || "Documento Jurídico"}
+          />
         </div>
       </div>
     </div>
