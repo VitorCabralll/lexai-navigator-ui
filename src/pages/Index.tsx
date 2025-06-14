@@ -1,11 +1,24 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Aqui você verificaria se o usuário está autenticado
+    // Por enquanto, vamos redirecionar para o login
+    navigate("/login");
+  }, [navigate]);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+          <span className="text-white font-bold text-2xl">L</span>
+        </div>
+        <h1 className="text-4xl font-bold mb-4">LexAI</h1>
+        <p className="text-xl text-muted-foreground">Carregando...</p>
       </div>
     </div>
   );
