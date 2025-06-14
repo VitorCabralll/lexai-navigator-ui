@@ -11,27 +11,19 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, Bot, FileText, Settings, Plus } from "lucide-react";
+import { LayoutDashboard, Settings, FileText, Plus, Building2, Crown } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { Button } from "@/components/ui/button";
 
-const menuItems = [
+const mainMenuItems = [
   {
     title: "Dashboard",
     url: "/dashboard",
     icon: LayoutDashboard,
   },
   {
-    title: "Workspace",
-    url: "/workspace",
-    icon: Users,
-  },
-  {
-    title: "Agentes",
-    url: "/agents",
-    icon: Bot,
-  },
-  {
-    title: "Gerar Minuta",
+    title: "Gerar Documento",
     url: "/generate",
     icon: FileText,
   },
@@ -44,6 +36,13 @@ const menuItems = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const { workspaces, selectedWorkspace, setSelectedWorkspace } = useWorkspace();
+
+  const handleWorkspaceSelect = (workspace: any) => {
+    setSelectedWorkspace(workspace);
+    // Navegar para o dashboard do workspace
+    window.history.pushState({}, '', `/dashboard?workspace=${workspace.id}`);
+  };
 
   return (
     <Sidebar>
@@ -57,11 +56,12 @@ export function AppSidebar() {
       </SidebarHeader>
       
       <SidebarContent>
+        {/* Menu Principal */}
         <SidebarGroup>
           <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
@@ -77,6 +77,62 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Meus Ambientes */}
+        <SidebarGroup>
+          <div className="flex items-center justify-between px-2">
+            <SidebarGroupLabel>Meus Ambientes</SidebarGroupLabel>
+            <Button size="sm" variant="ghost" asChild>
+              <Link to="/workspace">
+                <Plus className="h-3 w-3" />
+              </Link>
+            </Button>
+          </div>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {workspaces.map((workspace) => (
+                <SidebarMenuItem key={workspace.id}>
+                  <SidebarMenuButton 
+                    onClick={() => handleWorkspaceSelect(workspace)}
+                    isActive={selectedWorkspace?.id === workspace.id}
+                    className="cursor-pointer"
+                  >
+                    <Building2 className={workspace.iconColor} />
+                    <span>{workspace.name}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+              {workspaces.length === 0 && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link to="/workspace" className="text-muted-foreground">
+                      <Plus />
+                      <span>Criar primeiro ambiente</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Criar Agente - só aparece se há workspace selecionado */}
+        {selectedWorkspace && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link to="/agents/create" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                      <Plus />
+                      <span>Criar Agente</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-4">
