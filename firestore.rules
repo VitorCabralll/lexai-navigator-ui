@@ -1,0 +1,35 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Regras para workspaces
+    match /workspaces/{workspaceId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.ownerId == request.auth.uid || 
+         request.auth.uid in resource.data.members);
+    }
+    
+    // Regras para agentes
+    match /agents/{agentId} {
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)) &&
+        (get(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)).data.ownerId == request.auth.uid ||
+         request.auth.uid in get(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)).data.members);
+    }
+    
+    // Regras para prompts
+    match /prompts/{promptId} {
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/agents/$(resource.data.agentId));
+    }
+    
+    // Regras para documentos
+    match /documents/{documentId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.userId == request.auth.uid ||
+         exists(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)) &&
+         (get(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)).data.ownerId == request.auth.uid ||
+          request.auth.uid in get(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)).data.members));
+    }
+  }
+}
