@@ -1,15 +1,221 @@
-
 import OpenAI from 'openai';
+import * as admin from 'firebase-admin';
 import { GenerationRequest, ProcessingStep, DocumentSection } from '../types/document';
 import { Agent } from '../types/agent';
+import { PipelineRequest, PipelineResult, EtapaProcessamento, DocumentoApoio } from '../types/pipeline';
+import { DocumentProcessor } from './documentProcessor';
 
 export class AIService {
   private openai: OpenAI;
+  private documentProcessor: DocumentProcessor;
 
   constructor() {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
     });
+    this.documentProcessor = new DocumentProcessor();
+  }
+
+  async executarPipelineIA(
+    agentId: string,
+    variaveis: Record<string, string>,
+    documentos: DocumentoApoio[],
+    instrucoes: string
+  ): Promise<PipelineResult> {
+    const inicioProcessamento = Date.now();
+    const etapas: EtapaProcessamento[] = [];
+    
+    try {
+      // 1. Buscar agente e prompt mestre
+      const agent = await this.buscarAgente(agentId);
+      if (!agent.masterPrompt) {
+        throw new Error('Agente não possui prompt mestre configurado');
+      }
+
+      // 2. Processar documentos de apoio
+      const documentosResumo = await this.documentProcessor.processarDocumentos(documentos);
+      const contextoDocs = documentosResumo.join('\n\n');
+
+      // 3. Executar pipeline de 3 etapas
+      const etapa1 = await this.executarEtapa1(instrucoes, contextoDocs, etapas);
+      const etapa2 = await this.executarEtapa2(etapa1, etapas);
+      const textoFinal = await this.executarEtapa3(agent.masterPrompt, etapa2, instrucoes, variaveis, etapas);
+
+      // 4. Calcular metadados
+      const tempoTotal = Date.now() - inicioProcessamento;
+      const tokensTotal = etapas.reduce((acc, etapa) => acc + etapa.tokensUsados, 0);
+      
+      return {
+        textoFinal,
+        metadata: {
+          tokensUsados: {
+            etapa1: etapas[0]?.tokensUsados || 0,
+            etapa2: etapas[1]?.tokensUsados || 0,
+            etapa3: etapas[2]?.tokensUsados || 0,
+            total: tokensTotal
+          },
+          tempoProcessamento: tempoTotal,
+          custoEstimado: this.calcularCusto(etapas)
+        }
+      };
+
+    } catch (error) {
+      console.error('Erro no pipeline de IA:', error);
+      throw error;
+    }
+  }
+
+  private async buscarAgente(agentId: string): Promise<Agent> {
+    const agentDoc = await admin.firestore().collection('agents').doc(agentId).get();
+    
+    if (!agentDoc.exists) {
+      throw new Error('Agente não encontrado');
+    }
+    
+    return { id: agentDoc.id, ...agentDoc.data() } as Agent;
+  }
+
+  private async executarEtapa1(instrucoes: string, contextoDocs: string, etapas: EtapaProcessamento[]): Promise<string> {
+    const inicio = Date.now();
+    
+    const prompt = `Analise a demanda jurídica e extraia as informações essenciais:
+
+INSTRUÇÕES:
+${instrucoes}
+
+DOCUMENTOS DE APOIO:
+${contextoDocs}
+
+Tarefas:
+1. Identifique o tipo de documento jurídico necessário
+2. Extraia fatos relevantes
+3. Identifique questões jurídicas centrais
+4. Determine estratégia argumentativa
+
+Responda de forma estruturada e objetiva (máximo 800 palavras).`;
+
+    const response = await this.openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 1000,
+      temperature: 0.3
+    });
+
+    const resultado = response.choices[0].message.content || '';
+    
+    etapas.push({
+      numero: 1,
+      nome: 'Interpretação da Demanda',
+      modelo: 'gpt-3.5-turbo',
+      prompt,
+      resultado,
+      tokensUsados: response.usage?.total_tokens || 0,
+      tempoInicio: inicio,
+      tempoFim: Date.now()
+    });
+
+    return resultado;
+  }
+
+  private async executarEtapa2(interpretacao: string, etapas: EtapaProcessamento[]): Promise<string> {
+    const inicio = Date.now();
+    
+    const prompt = `Com base na interpretação da demanda, desenvolva a fundamentação jurídica:
+
+INTERPRETAÇÃO:
+${interpretacao}
+
+Tarefas:
+1. Identifique normas jurídicas aplicáveis (leis, decretos, jurisprudência)
+2. Desenvolva argumentação jurídica sólida
+3. Cite precedentes relevantes quando apropriado
+4. Estruture logicamente os argumentos
+
+Foque em fundamentação consistente com o direito brasileiro (máximo 1500 palavras).`;
+
+    const response = await this.openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 2000,
+      temperature: 0.2
+    });
+
+    const resultado = response.choices[0].message.content || '';
+    
+    etapas.push({
+      numero: 2,
+      nome: 'Fundamentação Jurídica',
+      modelo: 'gpt-3.5-turbo',
+      prompt,
+      resultado,
+      tokensUsados: response.usage?.total_tokens || 0,
+      tempoInicio: inicio,
+      tempoFim: Date.now()
+    });
+
+    return resultado;
+  }
+
+  private async executarEtapa3(
+    promptMestre: string,
+    fundamentacao: string,
+    instrucoes: string,
+    variaveis: Record<string, string>,
+    etapas: EtapaProcessamento[]
+  ): Promise<string> {
+    const inicio = Date.now();
+    
+    // Aplicar variáveis no prompt mestre
+    let promptPersonalizado = promptMestre;
+    Object.entries(variaveis).forEach(([chave, valor]) => {
+      const regex = new RegExp(`\\{\\{${chave}\\}\\}`, 'g');
+      promptPersonalizado = promptPersonalizado.replace(regex, valor);
+    });
+
+    const prompt = `${promptPersonalizado}
+
+FUNDAMENTAÇÃO DESENVOLVIDA:
+${fundamentacao}
+
+INSTRUÇÕES ESPECÍFICAS:
+${instrucoes}
+
+Gere o documento jurídico final completo, profissional e tecnicamente correto. Use a estrutura e estilo definidos no prompt mestre, incorporando a fundamentação e atendendo às instruções específicas.`;
+
+    const response = await this.openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 4000,
+      temperature: 0.1
+    });
+
+    const resultado = response.choices[0].message.content || '';
+    
+    etapas.push({
+      numero: 3,
+      nome: 'Redação Final',
+      modelo: 'gpt-4',
+      prompt,
+      resultado,
+      tokensUsados: response.usage?.total_tokens || 0,
+      tempoInicio: inicio,
+      tempoFim: Date.now()
+    });
+
+    return resultado;
+  }
+
+  private calcularCusto(etapas: EtapaProcessamento[]): number {
+    // Preços aproximados por 1k tokens (valores de referência)
+    const precos = {
+      'gpt-3.5-turbo': 0.002, // $0.002/1k tokens
+      'gpt-4': 0.03           // $0.03/1k tokens
+    };
+    
+    return etapas.reduce((custo, etapa) => {
+      const precoPor1k = precos[etapa.modelo as keyof typeof precos] || 0;
+      return custo + (etapa.tokensUsados / 1000) * precoPor1k;
+    }, 0);
   }
 
   async generateDocument(
