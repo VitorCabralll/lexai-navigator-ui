@@ -4,17 +4,44 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Aqui você implementaria a lógica de autenticação
-    navigate("/dashboard");
+    setLoading(true);
+
+    try {
+      if (isSignUp) {
+        await signUp(email, password);
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Bem-vindo ao LexAI",
+        });
+        navigate("/onboarding");
+      } else {
+        await signIn(email, password);
+        navigate("/dashboard");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Ocorreu um erro durante a autenticação",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -28,7 +55,7 @@ export default function Login() {
           </div>
           <CardTitle className="text-2xl font-bold">LexAI</CardTitle>
           <CardDescription>
-            Entre na sua conta para acessar a plataforma
+            {isSignUp ? "Crie sua conta para começar" : "Entre na sua conta para acessar a plataforma"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -55,10 +82,20 @@ export default function Login() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full">
-              Entrar
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Carregando..." : (isSignUp ? "Criar Conta" : "Entrar")}
             </Button>
           </form>
+          
+          <div className="mt-4 text-center">
+            <Button
+              variant="link"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm"
+            >
+              {isSignUp ? "Já tem uma conta? Entrar" : "Não tem uma conta? Criar conta"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
