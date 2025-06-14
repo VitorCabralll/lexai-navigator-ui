@@ -1,6 +1,8 @@
-
 import * as admin from 'firebase-admin';
 import { Document } from '../types/document';
+import { StorageService } from './storageService';
+import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 export interface SalvarDocumentoRequest {
   uid: string;
@@ -21,8 +23,227 @@ export interface SalvarDocumentoResponse {
   document: Document;
 }
 
+export interface ExportarDocumentoResponse {
+  success: boolean;
+  downloadUrl: string;
+  fileName: string;
+  formato: 'docx' | 'pdf';
+  expiresAt: string;
+  fileSize: number;
+}
+
 export class DocumentService {
-  
+  private storageService: StorageService;
+
+  constructor() {
+    this.storageService = new StorageService();
+  }
+
+  async exportarDocumento(
+    documentoId: string,
+    formato: 'docx' | 'pdf',
+    uid: string
+  ): Promise<ExportarDocumentoResponse> {
+    try {
+      // 1. Validar formato
+      if (formato !== 'docx' && formato !== 'pdf') {
+        throw new Error('Formato deve ser "docx" ou "pdf"');
+      }
+
+      // 2. Buscar documento e validar acesso
+      const documento = await this.buscarDocumentoPorId(documentoId, uid);
+      if (!documento) {
+        throw new Error('Documento não encontrado');
+      }
+
+      // 3. Gerar nome do arquivo
+      const timestamp = Date.now();
+      const nomeArquivo = this.sanitizeFileName(`${documento.title}_${timestamp}.${formato}`);
+
+      // 4. Gerar arquivo baseado no formato
+      let buffer: Buffer;
+      if (formato === 'docx') {
+        buffer = await this.gerarDocx(documento.content, documento.title);
+      } else {
+        buffer = await this.gerarPdf(documento.content, documento.title);
+      }
+
+      // 5. Salvar no Firebase Storage
+      const filePath = await this.storageService.uploadFile(
+        buffer,
+        nomeArquivo,
+        documento.workspaceId,
+        'generated'
+      );
+
+      // 6. Gerar URL temporária (1 hora)
+      const downloadUrl = await this.storageService.getSignedUrl(
+        filePath.replace(`gs://${process.env.FIREBASE_STORAGE_BUCKET || 'lexai-default.appspot.com'}/`, ''),
+        3600 // 1 hora
+      );
+
+      // 7. Calcular data de expiração
+      const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
+
+      console.log(`Documento exportado:`, {
+        documentoId,
+        formato,
+        fileName: nomeArquivo,
+        fileSize: buffer.length,
+        userId: uid
+      });
+
+      return {
+        success: true,
+        downloadUrl,
+        fileName: nomeArquivo,
+        formato,
+        expiresAt,
+        fileSize: buffer.length
+      };
+
+    } catch (error) {
+      console.error('Erro ao exportar documento:', error);
+      throw error;
+    }
+  }
+
+  private async gerarDocx(content: string, title: string): Promise<Buffer> {
+    try {
+      // Dividir conteúdo em parágrafos
+      const paragrafos = content.split('\n').filter(linha => linha.trim());
+
+      // Criar documento DOCX
+      const doc = new DocxDocument({
+        sections: [{
+          properties: {},
+          children: [
+            // Título
+            new Paragraph({
+              children: [new TextRun({
+                text: title,
+                bold: true,
+                size: 28
+              })],
+              spacing: { after: 400 }
+            }),
+            // Conteúdo
+            ...paragrafos.map(paragrafo => 
+              new Paragraph({
+                children: [new TextRun({
+                  text: paragrafo || ' ',
+                  size: 24
+                })],
+                spacing: { after: 200 }
+              })
+            )
+          ]
+        }]
+      });
+
+      return await Packer.toBuffer(doc);
+    } catch (error) {
+      console.error('Erro ao gerar DOCX:', error);
+      throw new Error('Falha ao gerar arquivo DOCX');
+    }
+  }
+
+  private async gerarPdf(content: string, title: string): Promise<Buffer> {
+    try {
+      const pdfDoc = await PDFDocument.create();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      
+      let page = pdfDoc.addPage();
+      const { width, height } = page.getSize();
+      
+      const fontSize = 12;
+      const titleFontSize = 16;
+      const lineHeight = fontSize + 4;
+      const margin = 50;
+      let yPosition = height - margin;
+
+      // Adicionar título
+      page.drawText(title, {
+        x: margin,
+        y: yPosition,
+        size: titleFontSize,
+        font: boldFont,
+        color: rgb(0, 0, 0)
+      });
+      yPosition -= titleFontSize + 20;
+
+      // Dividir conteúdo em linhas
+      const linhas = content.split('\n');
+      const maxWidth = width - (margin * 2);
+      const maxCharsPerLine = Math.floor(maxWidth / (fontSize * 0.6));
+
+      for (const linha of linhas) {
+        if (!linha.trim()) {
+          yPosition -= lineHeight / 2;
+          continue;
+        }
+
+        // Quebrar linha longa em múltiplas linhas
+        const palavras = linha.split(' ');
+        let linhaAtual = '';
+
+        for (const palavra of palavras) {
+          const linhaComPalavra = linhaAtual ? `${linhaAtual} ${palavra}` : palavra;
+          
+          if (linhaComPalavra.length <= maxCharsPerLine) {
+            linhaAtual = linhaComPalavra;
+          } else {
+            // Desenhar linha atual e começar nova linha
+            if (yPosition < margin + lineHeight) {
+              page = pdfDoc.addPage();
+              yPosition = height - margin;
+            }
+
+            page.drawText(linhaAtual, {
+              x: margin,
+              y: yPosition,
+              size: fontSize,
+              font: font,
+              color: rgb(0, 0, 0)
+            });
+            yPosition -= lineHeight;
+          }
+        }
+
+        // Desenhar última linha
+        if (linhaAtual) {
+          if (yPosition < margin + lineHeight) {
+            page = pdfDoc.addPage();
+            yPosition = height - margin;
+          }
+
+          page.drawText(linhaAtual, {
+            x: margin,
+            y: yPosition,
+            size: fontSize,
+            font: font,
+            color: rgb(0, 0, 0)
+          });
+          yPosition -= lineHeight;
+        }
+      }
+
+      return Buffer.from(await pdfDoc.save());
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      throw new Error('Falha ao gerar arquivo PDF');
+    }
+  }
+
+  private sanitizeFileName(fileName: string): string {
+    // Remover caracteres especiais e substituir espaços
+    return fileName
+      .replace(/[^a-zA-Z0-9.\-_]/g, '_')
+      .replace(/_{2,}/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
   async salvarDocumentoFinal(
     uid: string,
     workspaceId: string,
