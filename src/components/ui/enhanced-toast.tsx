@@ -11,13 +11,13 @@ interface ToastOptions {
 export const toast = {
   success: ({ title, description, duration = 4000 }: ToastOptions) => {
     originalToast({
-      title: (
+      title,
+      description: (
         <div className="flex items-center gap-2">
           <CheckCircle className="h-4 w-4 text-green-600" />
-          {title}
+          {description}
         </div>
       ),
-      description,
       duration,
       className: "border-green-200 bg-green-50"
     })
@@ -25,13 +25,13 @@ export const toast = {
 
   error: ({ title, description, duration = 6000 }: ToastOptions) => {
     originalToast({
-      title: (
+      title,
+      description: (
         <div className="flex items-center gap-2">
           <XCircle className="h-4 w-4 text-red-600" />
-          {title}
+          {description}
         </div>
       ),
-      description,
       duration,
       variant: "destructive"
     })
@@ -39,13 +39,13 @@ export const toast = {
 
   warning: ({ title, description, duration = 5000 }: ToastOptions) => {
     originalToast({
-      title: (
+      title,
+      description: (
         <div className="flex items-center gap-2">
           <AlertCircle className="h-4 w-4 text-yellow-600" />
-          {title}
+          {description}
         </div>
       ),
-      description,
       duration,
       className: "border-yellow-200 bg-yellow-50"
     })
@@ -53,13 +53,13 @@ export const toast = {
 
   info: ({ title, description, duration = 4000 }: ToastOptions) => {
     originalToast({
-      title: (
+      title,
+      description: (
         <div className="flex items-center gap-2">
           <Info className="h-4 w-4 text-blue-600" />
-          {title}
+          {description}
         </div>
       ),
-      description,
       duration,
       className: "border-blue-200 bg-blue-50"
     })
