@@ -1,8 +1,9 @@
 import OpenAI from 'openai';
+import * as logger from 'firebase-functions/v2/logger';
 import * as admin from 'firebase-admin';
 import { GenerationRequest, ProcessingStep, DocumentSection } from '../types/document';
 import { Agent } from '../types/agent';
-import { PipelineRequest, PipelineResult, EtapaProcessamento, DocumentoApoio, ExecutarPromptRequest, PromptPredefinido } from '../types/pipeline';
+import { PipelineResult, EtapaProcessamento, DocumentoApoio, PromptPredefinido } from '../types/pipeline'; // Removed PipelineRequest, ExecutarPromptRequest
 import { DocumentProcessor } from './documentProcessor';
 import { DocumentService } from './documentService';
 
@@ -63,14 +64,12 @@ export class AIService {
       const tempoTotal = Date.now() - inicioProcessamento;
       const tokensUsados = response.usage?.total_tokens || 0;
       
-      console.log(`Prompt predefinido executado: ${promptId}`);
-      console.log(`Tokens usados: ${tokensUsados}`);
-      console.log(`Tempo: ${tempoTotal}ms`);
+      logger.info(`Prompt predefinido executado`, { promptId, tokensUsados, tempoTotal });
 
       return textoGerado;
 
     } catch (error) {
-      console.error('Erro ao executar prompt predefinido:', error);
+      logger.error('Erro ao executar prompt predefinido:', { error: error instanceof Error ? error.toString() : error, promptId });
       throw error;
     }
   }
@@ -144,7 +143,7 @@ Gere o documento jurídico completo, profissional e tecnicamente correto seguind
       };
 
     } catch (error) {
-      console.error('Erro no pipeline de IA:', error);
+      logger.error('Erro no pipeline de IA:', { error: error instanceof Error ? error.toString() : error, agentId });
       throw error;
     }
   }
@@ -558,7 +557,7 @@ Gere o documento jurídico final completo, profissional e tecnicamente correto.`
       };
       
     } catch (error) {
-      console.error('Erro ao executar prompt e salvar:', error);
+      logger.error('Erro ao executar prompt e salvar:', { error: error instanceof Error ? error.toString() : error, promptId, workspaceId });
       throw error;
     }
   }
@@ -597,7 +596,7 @@ Gere o documento jurídico final completo, profissional e tecnicamente correto.`
       };
       
     } catch (error) {
-      console.error('Erro ao executar pipeline e salvar:', error);
+      logger.error('Erro ao executar pipeline e salvar:', { error: error instanceof Error ? error.toString() : error, agentId, workspaceId });
       throw error;
     }
   }

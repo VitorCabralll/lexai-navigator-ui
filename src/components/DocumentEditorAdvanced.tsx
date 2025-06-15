@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge"; // Unused
 import { Textarea } from "@/components/ui/textarea";
 import { 
   FileText, 
@@ -109,7 +109,7 @@ export function DocumentEditorAdvanced({
         title: "Copiado!",
         description: "Conteúdo copiado para a área de transferência",
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Erro ao copiar",
         description: "Não foi possível copiar o conteúdo",

@@ -1,5 +1,6 @@
 
 import * as mammoth from 'mammoth';
+import * as logger from 'firebase-functions/v2/logger';
 import { Section } from '../types/agent';
 
 export interface IntelligentProcessingResult {
@@ -99,7 +100,7 @@ export class IntelligentDocxProcessor {
         qualidade
       };
     } catch (error) {
-      console.error('Erro no processamento inteligente:', error);
+      logger.error('Erro no processamento inteligente:', { error: error instanceof Error ? error.toString() : error });
       throw error;
     }
   }

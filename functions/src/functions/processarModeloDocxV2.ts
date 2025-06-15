@@ -1,5 +1,6 @@
 
 import { onRequest } from 'firebase-functions/v2/https';
+import * as logger from 'firebase-functions/v2/logger';
 import * as admin from 'firebase-admin';
 import * as express from 'express';
 import * as multer from 'multer';
@@ -57,7 +58,7 @@ async function authenticateUser(req: express.Request): Promise<string> {
     const decodedToken = await admin.auth().verifyIdToken(token);
     return decodedToken.uid;
   } catch (error) {
-    console.error('Erro ao verificar token:', error);
+    logger.error('Erro ao verificar token:', { error: error instanceof Error ? error.toString() : error });
     throw new AuthenticationError('Token inválido ou expirado');
   }
 }
@@ -90,7 +91,7 @@ app.post('/processar-modelo-v2', upload.single('file'), async (req, res) => {
       return res.status(400).json(handleError(new ValidationError('Arquivo .docx é obrigatório')));
     }
 
-    console.log(`Iniciando processamento inteligente - WorkspaceId: ${workspaceId}, Arquivo: ${file.originalname}`);
+    logger.info(`Iniciando processamento inteligente`, { workspaceId, fileName: file.originalname });
 
     // Autenticar usuário
     const userId = await authenticateUser(req);
@@ -100,7 +101,7 @@ app.post('/processar-modelo-v2', upload.single('file'), async (req, res) => {
 
     // Processar documento com análise inteligente
     const intelligentProcessor = new IntelligentDocxProcessor();
-    console.log('Processando arquivo com análise inteligente...');
+    logger.info('Processando arquivo com análise inteligente...');
     
     const {
       textoExtraido,
@@ -110,7 +111,7 @@ app.post('/processar-modelo-v2', upload.single('file'), async (req, res) => {
       qualidade
     } = await intelligentProcessor.processDocxIntelligently(file.buffer);
     
-    console.log(`Processamento concluído - Área: ${classificacao.area}, Qualidade: ${qualidade.overall}/100`);
+    logger.info(`Processamento concluído`, { area: classificacao.area, quality: `${qualidade.overall}/100` });
 
     // Gerar prompt inteligente
     const masterPrompt = intelligentProcessor.generateIntelligentPrompt(
@@ -122,7 +123,7 @@ app.post('/processar-modelo-v2', upload.single('file'), async (req, res) => {
     );
 
     // Salvar arquivo no Storage
-    console.log('Salvando arquivo no Firebase Storage...');
+    logger.info('Salvando arquivo no Firebase Storage...');
     const storageService = new StorageService();
     const fileUrl = await storageService.uploadFile(
       file.buffer,
@@ -137,7 +138,7 @@ app.post('/processar-modelo-v2', upload.single('file'), async (req, res) => {
     // Criar agente automaticamente se solicitado
     if (createAgent) {
       try {
-        console.log('Criando agente com IA...');
+        logger.info('Criando agente com IA...');
         const aiCreator = new AIAgentCreator();
         
         const agentCreationResult = await aiCreator.createIntelligentAgent({
@@ -189,9 +190,9 @@ app.post('/processar-modelo-v2', upload.single('file'), async (req, res) => {
         };
 
         await agentRef.set(agentData);
-        console.log(`Agente criado automaticamente: ${agentId} (${agentCreationResult.confidenceScore}% confiança)`);
+        logger.info(`Agente criado automaticamente`, { agentId, confidence: agentCreationResult.confidenceScore });
       } catch (error) {
-        console.error('Erro na criação automática do agente:', error);
+        logger.error('Erro na criação automática do agente:', { error: error instanceof Error ? error.toString() : error });
         // Continuar sem criar o agente se houver erro
       }
     }
@@ -230,7 +231,7 @@ app.post('/processar-modelo-v2', upload.single('file'), async (req, res) => {
     await promptRef.set(promptData);
 
     const processingTime = Date.now() - startTime;
-    console.log(`Processamento inteligente completo em ${processingTime}ms`);
+    logger.info(`Processamento inteligente completo`, { processingTime });
 
     // Resposta estruturada
     res.json({
@@ -287,7 +288,7 @@ app.post('/processar-modelo-v2', upload.single('file'), async (req, res) => {
 
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    console.error(`Erro no processamento inteligente (${processingTime}ms):`, error);
+    logger.error(`Erro no processamento inteligente`, { error: error instanceof Error ? error.toString() : error, processingTime });
     
     const errorResponse = handleError(error);
     res.status(errorResponse.statusCode).json(errorResponse);

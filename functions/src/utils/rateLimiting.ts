@@ -1,5 +1,6 @@
 
 import * as admin from 'firebase-admin';
+import * as logger from 'firebase-functions/v2/logger';
 import { Request, Response, NextFunction } from 'express';
 
 interface RateLimitRule {
@@ -131,7 +132,7 @@ export class RateLimitService {
 
       return { allowed: true };
     } catch (error) {
-      console.error(`Erro ao verificar rate limit para ${key}:`, error);
+      logger.error(`Erro ao verificar rate limit para ${key}:`, { error: error instanceof Error ? error.toString() : error, key });
       // Em caso de erro, permitir a requisição (fail-open)
       return { allowed: true };
     }
@@ -167,7 +168,7 @@ export class RateLimitService {
         }
       });
     } catch (error) {
-      console.error(`Erro ao incrementar contador para ${key}:`, error);
+      logger.error(`Erro ao incrementar contador para ${key}:`, { error: error instanceof Error ? error.toString() : error, key });
     }
   }
 
@@ -191,7 +192,7 @@ export class RateLimitService {
 
         next();
       } catch (error) {
-        console.error('Erro no middleware de rate limiting:', error);
+        logger.error('Erro no middleware de rate limiting:', { error: error instanceof Error ? error.toString() : error });
         // Em caso de erro, permitir a requisição
         next();
       }
@@ -215,9 +216,9 @@ export class RateLimitService {
       });
 
       await batch.commit();
-      console.log(`Limpeza do rate limiting: ${snapshot.size} registros removidos`);
+      logger.info(`Limpeza do rate limiting: ${snapshot.size} registros removidos`);
     } catch (error) {
-      console.error('Erro na limpeza do rate limiting:', error);
+      logger.error('Erro na limpeza do rate limiting:', { error: error instanceof Error ? error.toString() : error });
     }
   }
 }

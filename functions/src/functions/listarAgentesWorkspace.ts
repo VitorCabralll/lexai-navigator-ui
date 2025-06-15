@@ -1,5 +1,6 @@
 
 import { onRequest } from 'firebase-functions/v2/https';
+import * as logger from 'firebase-functions/v2/logger';
 import * as admin from 'firebase-admin';
 import { Request, Response } from 'express';
 import { authenticateUser, checkWorkspaceAccess, AuthenticatedRequest } from './auth';
@@ -95,7 +96,7 @@ async function listarAgentesWorkspaceHandler(req: AuthenticatedRequest, res: Res
       workspaceId
     };
 
-    console.log(`Agentes listados para workspace ${workspaceId}:`, {
+    logger.info(`Agentes listados para workspace ${workspaceId}:`, {
       customAgents: customAgents.length,
       officialAgents: OFFICIAL_AGENTS.length,
       total: allAgents.length
@@ -104,7 +105,7 @@ async function listarAgentesWorkspaceHandler(req: AuthenticatedRequest, res: Res
     return res.json(response);
 
   } catch (error) {
-    console.error('Erro ao listar agentes do workspace:', error);
+    logger.error('Erro ao listar agentes do workspace:', { error: error instanceof Error ? error.toString() : error });
     return res.status(500).json({
       success: false,
       error: 'Erro interno do servidor'

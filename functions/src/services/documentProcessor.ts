@@ -1,5 +1,6 @@
 
-import * as admin from 'firebase-admin';
+// import * as admin from 'firebase-admin'; // Unused
+import * as logger from 'firebase-functions/v2/logger';
 
 export class DocumentProcessor {
   async processarDocumentos(documentos: Array<{url: string, tipo: 'pdf' | 'docx' | 'texto', nome: string}>): Promise<string[]> {
@@ -23,7 +24,7 @@ export class DocumentProcessor {
         resumos.push(resumo);
         
       } catch (error) {
-        console.error(`Erro ao processar documento ${doc.nome}:`, error);
+        logger.error(`Erro ao processar documento ${doc.nome}:`, { error: error instanceof Error ? error.toString() : error, documentName: doc.nome, documentUrl: doc.url });
         resumos.push(`Erro ao processar: ${doc.nome}`);
       }
     }
@@ -35,20 +36,20 @@ export class DocumentProcessor {
     try {
       const response = await fetch(url);
       return await response.text();
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Erro ao baixar texto de ${url}`);
     }
   }
 
   private async extrairTextoDePdf(url: string): Promise<string> {
     // Placeholder - em produção, usar biblioteca como pdf-parse
-    console.log('PDF processing não implementado ainda:', url);
+    logger.warn('PDF processing não implementado ainda:', { url });
     return 'Conteúdo PDF extraído (placeholder)';
   }
 
   private async extrairTextoDeDocx(url: string): Promise<string> {
     // Placeholder - reutilizar mammoth do DocxProcessor
-    console.log('DOCX processing não implementado ainda:', url);
+    logger.warn('DOCX processing não implementado ainda:', { url });
     return 'Conteúdo DOCX extraído (placeholder)';
   }
 

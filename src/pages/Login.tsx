@@ -104,10 +104,11 @@ export default function Login() {
         });
         navigate("/dashboard");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Ocorreu um erro. Tente novamente.";
       toast({
         title: "Erro na autenticação",
-        description: error.message || "Ocorreu um erro. Tente novamente.",
+        description: message,
         variant: "destructive"
       });
     } finally {
@@ -125,10 +126,11 @@ export default function Login() {
         description: "Bem-vindo ao LexAI"
       });
       navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Ocorreu um erro. Tente novamente.";
       toast({
         title: "Erro no login com Google",
-        description: error.message || "Ocorreu um erro. Tente novamente.",
+        description: message,
         variant: "destructive"
       });
     } finally {

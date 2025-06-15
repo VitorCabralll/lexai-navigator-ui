@@ -1,6 +1,6 @@
 
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { onRequest } from 'firebase-functions/v2/https';
+import * as logger from 'firebase-functions/v2/logger';
 import * as admin from 'firebase-admin';
 import * as express from 'express';
 import * as multer from 'multer';
@@ -50,7 +50,7 @@ async function authenticateUser(req: express.Request): Promise<string> {
     const decodedToken = await admin.auth().verifyIdToken(token);
     return decodedToken.uid;
   } catch (error) {
-    console.error('Erro ao verificar token:', error);
+    logger.error('Erro ao verificar token:', { error: error instanceof Error ? error.toString() : error });
     throw new AuthenticationError('Token inválido ou expirado');
   }
 }
@@ -83,7 +83,7 @@ app.post('/processar-modelo', upload.single('file'), async (req, res) => {
       return res.status(400).json(handleError(new ValidationError('Arquivo .docx é obrigatório')));
     }
 
-    console.log(`Iniciando processamento de modelo - WorkspaceId: ${workspaceId}, AgentId: ${agentId}, Arquivo: ${file.originalname}`);
+    logger.info(`Iniciando processamento de modelo`, { workspaceId, agentId, fileName: file.originalname});
 
     // Autenticar usuário
     const userId = await authenticateUser(req);
@@ -108,16 +108,16 @@ app.post('/processar-modelo', upload.single('file'), async (req, res) => {
     const docxProcessor = new DocxProcessor();
     const storageService = new StorageService();
 
-    console.log('Processando arquivo DOCX...');
+    logger.info('Processando arquivo DOCX...');
     const { textoExtraido, estruturas, variaveis } = await docxProcessor.processWithRetry(file.buffer);
     
-    console.log(`Processamento concluído - Seções: ${estruturas.length}, Variáveis: ${variaveis.length}`);
+    logger.info(`Processamento concluído`, { sections: estruturas.length, variables: variaveis.length });
 
     // Gerar prompt mestre
     const masterPrompt = docxProcessor.generateMasterPrompt(estruturas, variaveis, textoExtraido);
 
     // Salvar arquivo no Storage
-    console.log('Salvando arquivo no Firebase Storage...');
+    logger.info('Salvando arquivo no Firebase Storage...');
     const fileUrl = await storageService.uploadFile(
       file.buffer,
       file.originalname,
@@ -181,7 +181,7 @@ app.post('/processar-modelo', upload.single('file'), async (req, res) => {
     });
 
     const processingTime = Date.now() - startTime;
-    console.log(`Processamento completo em ${processingTime}ms`);
+    logger.info(`Processamento completo`, { processingTime });
 
     res.json({
       success: true,
@@ -202,7 +202,7 @@ app.post('/processar-modelo', upload.single('file'), async (req, res) => {
 
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    console.error(`Erro ao processar modelo (${processingTime}ms):`, error);
+    logger.error(`Erro ao processar modelo`, { error: error instanceof Error ? error.toString() : error, processingTime });
     
     const errorResponse = handleError(error);
     res.status(errorResponse.statusCode).json(errorResponse);

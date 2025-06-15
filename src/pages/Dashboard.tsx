@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Plus, Crown, Building2, Zap, Users, BookOpen, PenTool, FileCheck, Shield, Play, MessageCircle, Sparkles } from "lucide-react";
+import { FileText, Plus, Crown, Building2, Users, BookOpen, PenTool, FileCheck, Shield, Play, MessageCircle, Sparkles } from "lucide-react"; // Removed Zap
 import { Link } from "react-router-dom";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 

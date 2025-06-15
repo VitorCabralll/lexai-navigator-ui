@@ -1,6 +1,7 @@
 
 import * as admin from 'firebase-admin';
 import { Request, Response, NextFunction } from 'express';
+import * as logger from 'firebase-functions/v2/logger';
 
 export interface AuthenticatedRequest extends Request {
   user?: admin.auth.DecodedIdToken;
@@ -27,7 +28,7 @@ export async function authenticateUser(
     req.user = decodedToken;
     next();
   } catch (error) {
-    console.error('Erro na autenticação:', error);
+    logger.error('Erro na autenticação:', { error: error instanceof Error ? error.toString() : error });
     return res.status(401).json({
       success: false,
       error: 'Token inválido'
@@ -50,7 +51,7 @@ export async function checkWorkspaceAccess(
     const workspace = workspaceDoc.data();
     return workspace?.ownerId === userId || workspace?.members?.includes(userId);
   } catch (error) {
-    console.error('Erro ao verificar acesso ao workspace:', error);
+    logger.error('Erro ao verificar acesso ao workspace:', { error: error instanceof Error ? error.toString() : error });
     return false;
   }
 }

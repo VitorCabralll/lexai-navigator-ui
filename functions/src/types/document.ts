@@ -30,7 +30,7 @@ export interface ProcessingStep {
   status: 'pending' | 'processing' | 'completed' | 'error';
   startTime: number;
   endTime?: number;
-  result?: any;
+  result?: unknown; // Changed from any to unknown
 }
 
 export interface DocumentSection {

@@ -64,7 +64,14 @@ export const workspaceSchema = Joi.object({
   members: Joi.array().items(Joi.string().email()).max(50).default([])
 });
 
+export const exportarDocumentoSchema = Joi.object({
+  formato: Joi.string().valid('docx', 'pdf').required()
+});
+
 // Função de validação com sanitização
+// ATENÇÃO: Esta função realiza uma sanitização básica.
+// É crucial complementar com outras práticas de segurança,
+// como output encoding para prevenir XSS e queries parametrizadas para evitar SQL/NoSQL Injection.
 export function validateRequest(schema: Joi.ObjectSchema, data: any) {
   // Sanitizar dados primeiro
   const sanitizedData = sanitizeInput(data);
@@ -89,30 +96,56 @@ export function validateRequest(schema: Joi.ObjectSchema, data: any) {
 }
 
 // Sanitização de entrada
+// Esta função aplica várias regras de sanitização para mitigar riscos comuns.
+// No entanto, é fundamental entender suas limitações e combiná-la com outras medidas de segurança.
 function sanitizeInput(data: any): any {
   if (typeof data === 'string') {
-    return data
-      .trim()
-      .replace(/[<>]/g, '') // Remover < e >
-      .replace(/javascript:/gi, '') // Remover javascript:
-      .replace(/on\w+=/gi, '') // Remover event handlers
-      .substring(0, 10000); // Limitar tamanho
+    let sanitizedString = data.trim();
+
+    // Remover caracteres < e > para mitigar XSS básico.
+    // IMPORTANTE: Isso não é uma proteção completa contra XSS.
+    // Output encoding adequado é essencial no frontend/template engine.
+    sanitizedString = sanitizedString.replace(/[<>]/g, '');
+
+    // Remover "javascript:" para prevenir XSS via URLs.
+    sanitizedString = sanitizedString.replace(/javascript:/gi, '');
+
+    // Remover atributos "on<event>=" para desarmar handlers de eventos inline.
+    sanitizedString = sanitizedString.replace(/on\w+=/gi, '');
+
+    // Remover caracteres comuns de injeção NoSQL ($, {, }).
+    // ATENÇÃO: Isso pode ser restritivo demais se esses caracteres forem esperados em algum campo.
+    // Avalie o impacto e considere abordagens mais específicas se necessário.
+    // O ideal é usar queries parametrizadas/preparadas no banco de dados.
+    sanitizedString = sanitizedString.replace(/[\$\{\}]/g, '');
+
+    // Limitar o tamanho da string para prevenir ataques de negação de serviço (DoS) ou sobrecarga.
+    // O limite de 10000 caracteres deve ser ajustado conforme a necessidade da aplicação.
+    return sanitizedString.substring(0, 10000);
   }
   
   if (Array.isArray(data)) {
-    return data.slice(0, 100).map(sanitizeInput); // Limitar arrays
+    // Limitar o número de elementos em arrays para prevenir DoS.
+    // O limite de 100 elementos deve ser ajustado conforme a necessidade.
+    return data.slice(0, 100).map(sanitizeInput);
   }
   
   if (typeof data === 'object' && data !== null) {
     const sanitized: any = {};
     for (const [key, value] of Object.entries(data)) {
-      if (typeof key === 'string' && key.length <= 100) {
-        sanitized[key.replace(/[^a-zA-Z0-9_-]/g, '')] = sanitizeInput(value);
+      if (typeof key === 'string' && key.length <= 100) { // Limitar tamanho da chave
+        // Sanitizar chaves de objeto para permitir apenas caracteres alfanuméricos, underscores e hífens.
+        // Isso ajuda a prevenir ataques como prototype pollution e outros baseados em chaves maliciosas.
+        // ATENÇÃO: Se chaves com outros caracteres são esperadas, esta regra pode ser muito restritiva.
+        // Considere logar um aviso se chaves forem significativamente alteradas.
+        const sanitizedKey = key.replace(/[^a-zA-Z0-9_-]/g, '');
+        sanitized[sanitizedKey] = sanitizeInput(value);
       }
     }
     return sanitized;
   }
   
+  // Retornar o dado como está se não for string, array ou objeto.
   return data;
 }
 

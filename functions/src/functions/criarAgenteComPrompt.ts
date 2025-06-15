@@ -1,5 +1,6 @@
 
 import { onRequest } from 'firebase-functions/v2/https';
+import * as logger from 'firebase-functions/v2/logger';
 import * as admin from 'firebase-admin';
 import * as express from 'express';
 import * as cors from 'cors';
@@ -38,7 +39,7 @@ async function authenticateUser(req: express.Request): Promise<string> {
     const decodedToken = await admin.auth().verifyIdToken(token);
     return decodedToken.uid;
   } catch (error) {
-    console.error('Erro ao verificar token:', error);
+    logger.error('Erro ao verificar token:', { error: error instanceof Error ? error.toString() : error });
     throw new AuthenticationError('Token inválido ou expirado');
   }
 }
@@ -89,7 +90,7 @@ app.post('/criar-agente', async (req, res) => {
       documentTemplate
     } = requestData as CriarAgenteRequest;
 
-    console.log(`Iniciando criação de agente - Nome: ${name}, Workspace: ${workspaceId}`);
+    logger.info('Iniciando criação de agente', { name, workspaceId });
 
     // Autenticar usuário
     const userId = await authenticateUser(req);
@@ -140,7 +141,7 @@ app.post('/criar-agente', async (req, res) => {
     await agentRef.set(agentData);
 
     const processingTime = Date.now() - startTime;
-    console.log(`Agente criado com sucesso em ${processingTime}ms - ID: ${agentRef.id}`);
+    logger.info('Agente criado com sucesso', { agentId: agentRef.id, processingTime });
 
     // Retornar resposta
     res.json({
@@ -163,7 +164,7 @@ app.post('/criar-agente', async (req, res) => {
 
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    console.error(`Erro ao criar agente (${processingTime}ms):`, error);
+    logger.error('Erro ao criar agente', { error: error instanceof Error ? error.toString() : error, processingTime });
     
     const errorResponse = handleError(error);
     res.status(errorResponse.statusCode).json(errorResponse);

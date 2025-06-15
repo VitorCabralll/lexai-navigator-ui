@@ -1,17 +1,22 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+// import { Label } from "@/components/ui/label"; // Unused
+// import { Textarea } from "@/components/ui/textarea"; // Unused
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, FileText, Bot, Zap, CheckCircle, MessageCircle, Sparkles, Crown, Users } from "lucide-react";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Unused
+import { ArrowLeft, ArrowRight, FileText, CheckCircle, MessageCircle, Sparkles, Bot } from "lucide-react"; // Bot was removed then re-added as it's used in steps.icon
 import { Link, useSearchParams } from "react-router-dom";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
-import { FileUpload } from "@/components/FileUpload";
+import { FileUpload } from "@/components/FileUpload"; // UploadedFile interface is also used by Generate.tsx
 import { GenerationProgress } from "@/components/GenerationProgress";
-import { PromptGrid } from "@/components/PromptGrid";
+// PromptGrid is now part of Step2Selection
+// import { PromptGrid } from "@/components/PromptGrid";
 import { ExpandableDocument } from "@/components/ExpandableDocument";
 import { PREDEFINED_PROMPTS } from "@/types/prompts";
+import { Step1CreationMode } from '@/components/generate/Step1CreationMode';
+import { Step2Selection } from '@/components/generate/Step2Selection';
+import { Step3Instructions } from '@/components/generate/Step3Instructions';
+// import { AlertTriangle, Info } from 'lucide-react'; // Unused based on current file content
 import { Toaster } from "@/components/ui/toaster";
 
 interface UploadedFile {
@@ -228,155 +233,46 @@ Documento criado automaticamente pelo LexAI`;
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
-              {/* Step 1: Creation Mode */}
-              {currentStep === 1 && (
-                <div className="space-y-6">
-                  <Label className="text-lg text-gray-900">Como você prefere trabalhar?</Label>
-                  <div className="space-y-4">
-                    <Card 
-                      className={`cursor-pointer transition-all hover:shadow-md border-2 ${
-                        creationMode === 'assistant' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => setCreationMode('assistant')}
-                    >
-                      <CardContent className="p-6 flex items-start gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                          <Bot className="h-6 w-6 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-gray-900 mb-2">Usar um Modelo Inteligente</h3>
-                          <p className="text-gray-600">
-                            Escolha um modelo que já sabe como fazer o que você precisa
-                          </p>
-                          <p className="text-sm text-blue-600 mt-2">💡 Recomendado para quem já tem modelos</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card 
-                      className={`cursor-pointer transition-all hover:shadow-md border-2 ${
-                        creationMode === 'template' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => setCreationMode('template')}
-                    >
-                      <CardContent className="p-6 flex items-start gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                          <Zap className="h-6 w-6 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-gray-900 mb-2">Começar do Zero</h3>
-                          <p className="text-gray-600">
-                            Escolha o tipo de documento e eu te ajudo a criar
-                          </p>
-                          <p className="text-sm text-green-600 mt-2">⚡ Perfeito para iniciantes</p>
-                        </div>
-                      </CardContent>
-                    </Card>
+              {/* Error display - Assuming error state exists */}
+              {/* {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                  <div className="flex items-start">
+                    <AlertTriangle className="h-5 w-5 text-red-500 mr-3 flex-shrink-0" />
+                    <div>
+                      <strong className="font-bold">Oops! Algo deu errado.</strong>
+                      <p className="text-sm">{error}</p>
+                    </div>
                   </div>
                 </div>
+              )} */}
+
+              {currentStep === 1 && (
+                <Step1CreationMode
+                  creationMode={creationMode}
+                  onSetCreationMode={setCreationMode}
+                />
               )}
 
-              {/* Step 2: Agent/Template Selection */}
-              {currentStep === 2 && creationMode === 'assistant' && (
-                <div className="space-y-6">
-                  <Label htmlFor="agent" className="text-lg text-gray-900">Qual modelo você quer usar?</Label>
-                  <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-                    <SelectTrigger className="h-14 text-left">
-                      <SelectValue placeholder="Escolha um modelo que se encaixa no que você precisa" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white">
-                      <SelectItem value="official-header" disabled className="text-xs font-medium text-gray-500 bg-gray-50">
-                        🏆 MODELOS OFICIAIS (RECOMENDADOS)
-                      </SelectItem>
-                      {officialAgents.map((agent) => (
-                        <SelectItem key={agent.id} value={agent.id} className="py-3">
-                          <div className="flex items-center gap-3">
-                            <Crown className="h-4 w-4 text-yellow-500" />
-                            <div>
-                              <div className="font-medium">{agent.name}</div>
-                              <div className="text-sm text-gray-500">{agent.theme}</div>
-                            </div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                      {workspaceAgents.length > 0 && (
-                        <>
-                          <SelectItem value="my-agents-header" disabled className="text-xs font-medium text-gray-500 bg-gray-50 mt-2">
-                            👤 MEUS MODELOS PERSONALIZADOS
-                          </SelectItem>
-                          {workspaceAgents.map((agent) => (
-                            <SelectItem key={agent.id} value={agent.id} className="py-3">
-                              <div className="flex items-center gap-3">
-                                <Users className="h-4 w-4 text-blue-500" />
-                                <div>
-                                  <div className="font-medium">{agent.name}</div>
-                                  <div className="text-sm text-gray-500">{agent.theme}</div>
-                                </div>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {currentStep === 2 && creationMode && (
+                <Step2Selection
+                  creationMode={creationMode}
+                  selectedAgent={selectedAgent}
+                  onSetSelectedAgent={setSelectedAgent}
+                  officialAgents={officialAgents}
+                  workspaceAgents={workspaceAgents}
+                  selectedPromptId={selectedPromptId}
+                  onPromptSelect={handlePromptSelect}
+                />
               )}
 
-              {currentStep === 2 && creationMode === 'template' && (
-                <div className="space-y-6">
-                  <Label className="text-lg text-gray-900">Que tipo de documento você precisa?</Label>
-                  <PromptGrid 
-                    selectedPromptId={selectedPromptId}
-                    onPromptSelect={handlePromptSelect}
-                  />
-                </div>
-              )}
-
-              {/* Step 3: Instructions */}
-              {currentStep === 3 && (
-                <div className="space-y-6">
-                  {creationMode === 'assistant' ? (
-                    <>
-                      <Label htmlFor="instructions" className="text-lg text-gray-900">
-                        Agora me conte: o que exatamente você precisa?
-                      </Label>
-                      <Textarea
-                        id="instructions"
-                        placeholder="Exemplo: Meu cliente João da Silva quer processar a empresa ABC Ltda por danos morais. Ele comprou um produto no valor de R$ 1.500 que veio com defeito e a empresa se recusou a trocar. Quero pedir indenização de R$ 10.000..."
-                        value={instructions}
-                        onChange={(e) => setInstructions(e.target.value)}
-                        rows={8}
-                        className="resize-none text-base"
-                      />
-                      <div className="bg-blue-50 p-4 rounded-lg">
-                        <p className="text-sm text-blue-800">
-                          <strong>💡 Dica:</strong> Quanto mais detalhes você me der, melhor será o documento. 
-                          Inclua nomes, valores, datas e o que aconteceu.
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <Label htmlFor="additional-instructions" className="text-lg text-gray-900">
-                        Há algo específico que deve aparecer no documento?
-                      </Label>
-                      <Textarea
-                        id="additional-instructions"
-                        placeholder="Exemplo: Preciso mencionar o artigo 6º da Lei de Improbidade e que o réu já foi processado antes pela empresa XYZ em 2020..."
-                        value={additionalInstructions}
-                        onChange={(e) => setAdditionalInstructions(e.target.value)}
-                        rows={8}
-                        className="resize-none text-base"
-                      />
-                      <div className="bg-green-50 p-4 rounded-lg">
-                        <p className="text-sm text-green-800">
-                          <strong>💡 Dica:</strong> Se você não tem certeza, pode deixar em branco. 
-                          Eu crio um documento padrão baseado no tipo escolhido.
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </div>
+              {currentStep === 3 && creationMode && (
+                <Step3Instructions
+                  creationMode={creationMode}
+                  instructions={instructions}
+                  onSetInstructions={setInstructions}
+                  additionalInstructions={additionalInstructions}
+                  onSetAdditionalInstructions={setAdditionalInstructions}
+                />
               )}
 
               {/* Step 4: File Upload */}

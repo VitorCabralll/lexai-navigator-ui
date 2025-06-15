@@ -7,7 +7,7 @@ import {
   Building, 
   BookOpen, 
   ShoppingCart, 
-  Users, 
+  // Users, // Unused
   Heart, 
   PiggyBank,
   Leaf,
