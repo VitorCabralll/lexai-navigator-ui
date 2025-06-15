@@ -1,5 +1,4 @@
-
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -290,7 +289,7 @@ export function FileUploadModern({
   };
 
   // Update parent component when files change
-  React.useEffect(() => {
+  useEffect(() => {
     onFilesChange(files.filter(f => f.status === 'completed'));
   }, [files, onFilesChange]);
 
