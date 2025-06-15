@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { loginSchema, type LoginFormData } from "@/schemas/validationSchemas";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { AlertTriangle, ExternalLink } from "lucide-react";
 
 export default function Login() {
   const [formData, setFormData] = useState<LoginFormData>({ email: "", password: "" });
@@ -18,8 +20,59 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
-  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { signIn, signUp, signInWithGoogle, isFirebaseConfigured } = useAuth();
   const { validate, getFieldError, clearErrors } = useFormValidation(loginSchema);
+
+  // Se Firebase não estiver configurado, mostrar mensagem de configuração
+  if (!isFirebaseConfigured) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xl">L</span>
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold">LexAI</CardTitle>
+            <CardDescription>Configuração Necessária</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Firebase não está configurado. Para usar a aplicação, você precisa:
+              </AlertDescription>
+            </Alert>
+            
+            <div className="space-y-3 text-sm">
+              <div>
+                <h4 className="font-semibold mb-2">Passos para configuração:</h4>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Criar um projeto no Firebase Console</li>
+                  <li>Copiar .env.local.example para .env.local</li>
+                  <li>Preencher com suas credenciais do Firebase</li>
+                  <li>Recarregar a aplicação</li>
+                </ol>
+              </div>
+              
+              <div className="pt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => window.open('https://console.firebase.google.com', '_blank')}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Abrir Firebase Console
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleInputChange = (field: keyof LoginFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));

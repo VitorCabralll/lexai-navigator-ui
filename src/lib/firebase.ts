@@ -1,8 +1,8 @@
 
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { initializeApp, FirebaseApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -24,19 +24,64 @@ const requiredEnvVars = [
 ];
 
 const missingVars = requiredEnvVars.filter(varName => !import.meta.env[varName]);
+const isFirebaseConfigured = missingVars.length === 0;
 
-if (missingVars.length > 0) {
-  console.error('Missing Firebase environment variables:', missingVars);
-  console.error('Please check your .env.local file');
+if (!isFirebaseConfigured) {
+  console.warn('Firebase não configurado. Variáveis de ambiente faltando:', missingVars);
+  console.warn('Para configurar Firebase, copie .env.local.example para .env.local e preencha com suas credenciais');
 }
 
-const app = initializeApp(firebaseConfig);
+// Inicializar Firebase apenas se estiver configurado
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
+let googleProvider: GoogleAuthProvider | null = null;
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export const googleProvider = new GoogleAuthProvider();
+if (isFirebaseConfigured) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+    googleProvider = new GoogleAuthProvider();
 
-// Configurar provedor Google
-googleProvider.addScope('email');
-googleProvider.addScope('profile');
+    // Configurar provedor Google
+    googleProvider.addScope('email');
+    googleProvider.addScope('profile');
+
+    console.log('Firebase inicializado com sucesso');
+  } catch (error) {
+    console.error('Erro ao inicializar Firebase:', error);
+  }
+}
+
+// Exportar com verificação de segurança
+export { auth, db, storage, googleProvider, isFirebaseConfigured };
+
+// Funções auxiliares para verificar se o Firebase está configurado
+export const requireFirebase = () => {
+  if (!isFirebaseConfigured) {
+    throw new Error('Firebase não está configurado. Verifique suas variáveis de ambiente.');
+  }
+};
+
+export const getFirebaseAuth = () => {
+  requireFirebase();
+  return auth!;
+};
+
+export const getFirebaseDb = () => {
+  requireFirebase();
+  return db!;
+};
+
+export const getFirebaseStorage = () => {
+  requireFirebase();
+  return storage!;
+};
+
+export const getGoogleProvider = () => {
+  requireFirebase();
+  return googleProvider!;
+};
