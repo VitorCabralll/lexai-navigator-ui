@@ -2,34 +2,114 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Função auxiliar para verificar autenticação
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Função para verificar se é owner do workspace
+    function isWorkspaceOwner(workspaceId) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid;
+    }
+    
+    // Função para verificar se é membro do workspace
+    function isWorkspaceMember(workspaceId) {
+      return isAuthenticated() && 
+        (isWorkspaceOwner(workspaceId) || 
+         request.auth.uid in get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.members);
+    }
+    
+    // Função para verificar se tem acesso ao workspace
+    function hasWorkspaceAccess(workspaceId) {
+      return exists(/databases/$(database)/documents/workspaces/$(workspaceId)) &&
+        isWorkspaceMember(workspaceId);
+    }
+
     // Regras para workspaces
     match /workspaces/{workspaceId} {
-      allow read, write: if request.auth != null && 
-        (resource.data.ownerId == request.auth.uid || 
-         request.auth.uid in resource.data.members);
+      allow read: if isWorkspaceMember(workspaceId);
+      allow create: if isAuthenticated() && 
+        request.resource.data.ownerId == request.auth.uid &&
+        request.resource.data.keys().hasAll(['name', 'ownerId', 'createdAt']) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() >= 2 &&
+        request.resource.data.name.size() <= 100;
+      allow update: if isWorkspaceOwner(workspaceId) && 
+        request.resource.data.ownerId == resource.data.ownerId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'members', 'updatedAt']);
+      allow delete: if isWorkspaceOwner(workspaceId);
     }
     
-    // Regras para agentes
+    // Regras para agentes - controle granular
     match /agents/{agentId} {
-      allow read, write: if request.auth != null && 
-        exists(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)) &&
-        (get(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)).data.ownerId == request.auth.uid ||
-         request.auth.uid in get(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)).data.members);
+      allow read: if hasWorkspaceAccess(resource.data.workspaceId);
+      allow create: if isAuthenticated() && 
+        hasWorkspaceAccess(request.resource.data.workspaceId) &&
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.keys().hasAll(['name', 'workspaceId', 'createdBy', 'createdAt']) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() >= 2 &&
+        request.resource.data.name.size() <= 100;
+      allow update: if hasWorkspaceAccess(resource.data.workspaceId) &&
+        (resource.data.createdBy == request.auth.uid || 
+         isWorkspaceOwner(resource.data.workspaceId)) &&
+        request.resource.data.workspaceId == resource.data.workspaceId &&
+        request.resource.data.createdBy == resource.data.createdBy;
+      allow delete: if hasWorkspaceAccess(resource.data.workspaceId) &&
+        (resource.data.createdBy == request.auth.uid || 
+         isWorkspaceOwner(resource.data.workspaceId));
     }
     
-    // Regras para prompts
+    // Regras para prompts - isolamento por workspace
     match /prompts/{promptId} {
-      allow read, write: if request.auth != null && 
-        exists(/databases/$(database)/documents/agents/$(resource.data.agentId));
+      allow read: if isAuthenticated() && 
+        (resource.data.agentId == null || 
+         hasWorkspaceAccess(get(/databases/$(database)/documents/agents/$(resource.data.agentId)).data.workspaceId));
+      allow create: if isAuthenticated() && 
+        request.resource.data.createdBy == request.auth.uid &&
+        (request.resource.data.agentId == null || 
+         hasWorkspaceAccess(get(/databases/$(database)/documents/agents/$(request.resource.data.agentId)).data.workspaceId));
+      allow update: if isAuthenticated() && 
+        resource.data.createdBy == request.auth.uid;
+      allow delete: if isAuthenticated() && 
+        resource.data.createdBy == request.auth.uid;
     }
     
-    // Regras para documentos
+    // Regras para documentos - controle por workspace e usuário
     match /documents/{documentId} {
-      allow read, write: if request.auth != null && 
+      allow read: if isAuthenticated() && 
         (resource.data.userId == request.auth.uid ||
-         exists(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)) &&
-         (get(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)).data.ownerId == request.auth.uid ||
-          request.auth.uid in get(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)).data.members));
+         hasWorkspaceAccess(resource.data.workspaceId));
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        hasWorkspaceAccess(request.resource.data.workspaceId) &&
+        request.resource.data.keys().hasAll(['title', 'content', 'workspaceId', 'userId', 'createdAt']) &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() >= 1 &&
+        request.resource.data.title.size() <= 200;
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.workspaceId == resource.data.workspaceId;
+      allow delete: if isAuthenticated() && 
+        (resource.data.userId == request.auth.uid ||
+         isWorkspaceOwner(resource.data.workspaceId));
+    }
+
+    // Regras para logs de auditoria - apenas leitura para owners
+    match /audit_logs/{logId} {
+      allow read: if isAuthenticated() && 
+        hasWorkspaceAccess(resource.data.workspaceId) &&
+        isWorkspaceOwner(resource.data.workspaceId);
+      allow create: if false; // Apenas via server-side
+    }
+    
+    // Regras para métricas - apenas leitura para membros
+    match /metrics/{metricId} {
+      allow read: if isAuthenticated() && 
+        hasWorkspaceAccess(resource.data.workspaceId);
+      allow create: if false; // Apenas via server-side
     }
   }
 }

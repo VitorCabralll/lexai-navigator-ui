@@ -2,11 +2,72 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{workspaceId}/{allPaths=**} {
-      allow read, write: if request.auth != null && 
+    // Função para verificar autenticação
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Função para verificar acesso ao workspace
+    function hasWorkspaceAccess(workspaceId) {
+      return isAuthenticated() && 
         exists(/databases/(default)/documents/workspaces/$(workspaceId)) &&
         (get(/databases/(default)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid ||
          request.auth.uid in get(/databases/(default)/documents/workspaces/$(workspaceId)).data.members);
+    }
+    
+    // Função para validar tipo de arquivo
+    function isValidFileType() {
+      return resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+             resource.contentType.matches('application/pdf') ||
+             resource.contentType.matches('text/plain') ||
+             resource.contentType.matches('image/.*');
+    }
+    
+    // Função para validar tamanho do arquivo (50MB max)
+    function isValidFileSize() {
+      return resource.size <= 50 * 1024 * 1024;
+    }
+
+    // Regras para uploads de workspace
+    match /{workspaceId}/uploads/{allPaths=**} {
+      allow read: if hasWorkspaceAccess(workspaceId);
+      allow write: if hasWorkspaceAccess(workspaceId) && 
+                      isValidFileType() && 
+                      isValidFileSize() &&
+                      request.auth.uid != null;
+      allow delete: if hasWorkspaceAccess(workspaceId) && 
+                       (get(/databases/(default)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid);
+    }
+    
+    // Regras para documentos gerados
+    match /{workspaceId}/generated/{allPaths=**} {
+      allow read: if hasWorkspaceAccess(workspaceId);
+      allow write: if false; // Apenas via server-side
+      allow delete: if hasWorkspaceAccess(workspaceId) &&
+                       (get(/databases/(default)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid);
+    }
+    
+    // Regras para arquivos temporários (1 dia de vida)
+    match /{workspaceId}/temp/{allPaths=**} {
+      allow read: if hasWorkspaceAccess(workspaceId) && 
+                     resource.timeCreated > (timestamp.date() - duration.value(1, 'd'));
+      allow write: if hasWorkspaceAccess(workspaceId) && 
+                      isValidFileType() && 
+                      isValidFileSize();
+      allow delete: if hasWorkspaceAccess(workspaceId);
+    }
+    
+    // Regras para backups (apenas owners)
+    match /{workspaceId}/backups/{allPaths=**} {
+      allow read: if isAuthenticated() && 
+                     exists(/databases/(default)/documents/workspaces/$(workspaceId)) &&
+                     get(/databases/(default)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid;
+      allow write: if false; // Apenas via server-side
+    }
+    
+    // Negar acesso a tudo que não foi explicitamente permitido
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }
