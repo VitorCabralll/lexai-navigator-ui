@@ -83,17 +83,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">L</span>
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-bold">LexAI</CardTitle>
+          <CardTitle className="text-xl">LexAI</CardTitle>
           <CardDescription>
-            {isSignUp ? "Crie sua conta para começar" : "Entre na sua conta para acessar a plataforma"}
+            {isSignUp ? "Criar conta" : "Entrar na sua conta"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -187,7 +182,7 @@ export default function Login() {
               onClick={() => setIsSignUp(!isSignUp)}
               className="text-sm"
             >
-              {isSignUp ? "Já tem uma conta? Entrar" : "Não tem uma conta? Criar conta"}
+              {isSignUp ? "Já tem conta? Entrar" : "Criar conta"}
             </Button>
           </div>
         </CardContent>
