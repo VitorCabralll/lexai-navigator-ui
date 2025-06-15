@@ -1,5 +1,6 @@
 
 import * as admin from 'firebase-admin';
+import * as logger from 'firebase-functions/v2/logger';
 
 export interface AuditLog {
   id?: string;
@@ -8,7 +9,7 @@ export interface AuditLog {
   action: string;
   resource: string;
   resourceId: string;
-  details: any;
+  details: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
   timestamp: admin.firestore.FieldValue;
@@ -27,6 +28,35 @@ export interface SecurityMetrics {
   averageResponseTime: number;
 }
 
+// Interfaces for detailed audit logging
+interface AgentCreationAuditDetails {
+  agentName?: string;
+  agentTheme?: string;
+  variablesCount?: number;
+  sectionsCount?: number;
+  classification?: unknown;
+  qualityScore?: number;
+}
+
+interface DocumentGenerationAuditMetadata {
+  mode?: string;
+  agentId?: string;
+  promptId?: string;
+  tokensUsed?: number;
+  processingTime?: number;
+  contentLength?: number;
+}
+
+interface ModelProcessingAuditData {
+  fileName?: string;
+  fileSize?: number;
+  variablesFound?: number;
+  sectionsFound?: number;
+  processingTime?: number;
+  classification?: unknown;
+  qualityMetrics?: { overall?: number };
+}
+
 export class AuditService {
   private db: admin.firestore.Firestore;
 
@@ -40,7 +70,7 @@ export class AuditService {
     action: string,
     resource: string,
     resourceId: string,
-    details: any,
+    details: Record<string, unknown>,
     success: boolean = true,
     errorMessage?: string,
     ipAddress?: string,
@@ -67,12 +97,12 @@ export class AuditService {
       await this.updateMetrics(workspaceId, action, success);
 
     } catch (error) {
-      console.error('Erro ao registrar log de auditoria:', error);
+      logger.error('Erro ao registrar log de auditoria:', { error: error instanceof Error ? error.toString() : error, workspaceId, action, resource, resourceId });
       // Não falhar a operação principal por erro de auditoria
     }
   }
 
-  async logAgentCreation(userId: string, workspaceId: string, agentId: string, agentData: any): Promise<void> {
+  async logAgentCreation(userId: string, workspaceId: string, agentId: string, agentData: Partial<AgentCreationAuditDetails>): Promise<void> {
     await this.logAction(
       userId,
       workspaceId,
@@ -94,7 +124,7 @@ export class AuditService {
     userId: string, 
     workspaceId: string, 
     documentId: string, 
-    metadata: any,
+    metadata: Partial<DocumentGenerationAuditMetadata>,
     success: boolean = true,
     errorMessage?: string
   ): Promise<void> {
@@ -120,7 +150,7 @@ export class AuditService {
     userId: string,
     workspaceId: string,
     promptId: string,
-    processingData: any,
+    processingData: Partial<ModelProcessingAuditData>,
     success: boolean = true,
     errorMessage?: string
   ): Promise<void> {
@@ -178,9 +208,9 @@ export class AuditService {
     });
   }
 
-  private sanitizeDetails(details: any): any {
+  private sanitizeDetails(details: Record<string, unknown>): Record<string, unknown> {
     // Remover informações sensíveis dos logs
-    const sanitized = { ...details };
+    const sanitized: Record<string, unknown> = { ...details };
     
     // Remover campos sensíveis
     delete sanitized.password;

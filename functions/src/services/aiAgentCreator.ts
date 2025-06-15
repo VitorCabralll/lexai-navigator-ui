@@ -1,7 +1,16 @@
 
 import { OpenAI } from 'openai';
+import * as logger from 'firebase-functions/v2/logger';
+import * as fs from 'fs';
+import * as path from 'path';
 import { DocumentClassification, QualityMetrics, VariableDetection } from './intelligentDocxProcessor';
 import { Section } from '../types/agent';
+
+// Helper to convert error to string
+const errorToString = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  return String(error);
+};
 
 export interface AgentCreationRequest {
   documentClassification: DocumentClassification;
@@ -41,7 +50,7 @@ export class AIAgentCreator {
 
   async createIntelligentAgent(request: AgentCreationRequest): Promise<AgentCreationResult> {
     try {
-      console.log('Iniciando criação inteligente de agente...');
+      logger.info('Iniciando criação inteligente de agente...');
 
       // Gerar nome e descrição do agente
       const agentIdentity = await this.generateAgentIdentity(request);
@@ -58,7 +67,7 @@ export class AIAgentCreator {
       // Gerar recomendações
       const recommendations = await this.generateRecommendations(request);
 
-      console.log(`Agente criado com ${confidenceScore}% de confiança`);
+      logger.info(`Agente criado com ${confidenceScore}% de confiança`);
 
       return {
         suggestedName: agentIdentity.name,
@@ -70,32 +79,32 @@ export class AIAgentCreator {
       };
 
     } catch (error) {
-      console.error('Erro na criação inteligente do agente:', error);
+      logger.error('Erro na criação inteligente do agente:', { error: error instanceof Error ? error.toString() : error });
       throw error;
+    }
+  }
+
+  private loadPromptTemplate(templateName: string): string {
+    const templatePath = path.join(__dirname, '../prompt_templates/', templateName);
+    try {
+      return fs.readFileSync(templatePath, 'utf-8');
+    } catch (error) {
+      logger.error(`Erro ao carregar template de prompt: ${templateName}`, { error: errorToString(error) });
+      // Fallback or re-throw, for now, re-throw to indicate a critical issue
+      throw new Error(`Falha ao carregar template ${templateName}`);
     }
   }
 
   private async generateAgentIdentity(request: AgentCreationRequest): Promise<{name: string, description: string}> {
     const { documentClassification, qualityMetrics, variables } = request;
     
-    const prompt = `Você é um especialista em criar agentes jurídicos de IA. Baseado na análise do documento, sugira:
-
-ANÁLISE DO DOCUMENTO:
-- Área jurídica: ${documentClassification.area}
-- Subtipo: ${documentClassification.subtype}
-- Qualidade: ${qualityMetrics.overall}/100
-- Variáveis: ${variables.length}
-- Palavras-chave: ${documentClassification.keywords.join(', ')}
-
-Gere um nome criativo e uma descrição para o agente que será especializado neste tipo de documento.
-
-RESPOSTA EM JSON:
-{
-  "name": "Nome do Agente (máximo 50 caracteres)",
-  "description": "Descrição técnica do agente (máximo 200 caracteres)"
-}
-
-Exemplos de nomes: "Especialista em Contratos Civis", "Redator de Petições Trabalhistas", "Assistente de Recursos Criminais"`;
+    const template = this.loadPromptTemplate('agent_identity_prompt.txt');
+    const prompt = template
+      .replace(/\$\{documentClassification.area\}/g, documentClassification.area)
+      .replace(/\$\{documentClassification.subtype\}/g, documentClassification.subtype)
+      .replace(/\$\{qualityMetrics.overall\}/g, String(qualityMetrics.overall))
+      .replace(/\$\{variables.length\}/g, String(variables.length))
+      .replace(/\$\{documentClassification.keywords\}/g, documentClassification.keywords.join(', '));
 
     try {
       const response = await this.openai.chat.completions.create({
@@ -115,7 +124,7 @@ Exemplos de nomes: "Especialista em Contratos Civis", "Redator de Petições Tra
       };
 
     } catch (error) {
-      console.warn('Erro ao gerar identidade com IA, usando fallback:', error);
+      logger.warn('Erro ao gerar identidade com IA, usando fallback:', { error: error instanceof Error ? error.toString() : error });
       return this.generateFallbackIdentity(request);
     }
   }
@@ -139,32 +148,22 @@ Exemplos de nomes: "Especialista em Contratos Civis", "Redator de Petições Tra
   }
 
   private async optimizePromptWithAI(request: AgentCreationRequest, identity: {name: string, description: string}): Promise<string> {
-    const { documentClassification, variables, structure, extractedText, userPreferences } = request;
+    const { documentClassification, userPreferences } = request;
     
     const basePrompt = this.generateBasePrompt(request);
-    
-    const optimizationPrompt = `Você é um especialista em otimização de prompts para IA jurídica. Otimize o prompt base para criar um agente mais eficaz:
+    const template = this.loadPromptTemplate('optimization_prompt_template.txt');
 
-PROMPT BASE:
-${basePrompt}
+    const optimizationPrompt = template
+      .replace(/\$\{basePrompt\}/g, basePrompt)
+      .replace(/\$\{identity.name\}/g, identity.name)
+      .replace(/\$\{identity.description\}/g, identity.description)
+      .replace(/\$\{userPreferences.complexity\}/g, userPreferences?.complexity || 'intermediate')
+      .replace(/\$\{userPreferences.focus\}/g, userPreferences?.focus || 'quality')
+      .replace(/\$\{userPreferences.style\}/g, userPreferences?.style || 'formal')
+      .replace(/\$\{documentClassification.area\}/g, documentClassification.area)
+      // The second occurrence of userPreferences.focus for "Otimizar para ${userPreferences.focus}"
+      .replace(/\$\{userPreferences.focus\}/g, userPreferences?.focus || 'quality');
 
-IDENTIDADE DO AGENTE:
-- Nome: ${identity.name}
-- Descrição: ${identity.description}
-
-PREFERÊNCIAS DO USUÁRIO:
-- Complexidade: ${userPreferences?.complexity || 'intermediate'}
-- Foco: ${userPreferences?.focus || 'quality'}
-- Estilo: ${userPreferences?.style || 'formal'}
-
-OTIMIZAÇÕES NECESSÁRIAS:
-1. Tornar instruções mais específicas para ${documentClassification.area}
-2. Melhorar clareza e precisão técnica
-3. Adicionar validações específicas
-4. Otimizar para ${userPreferences?.focus || 'quality'}
-5. Incluir exemplos contextuais
-
-Retorne apenas o prompt otimizado, sem explicações adicionais.`;
 
     try {
       const response = await this.openai.chat.completions.create({
@@ -178,7 +177,7 @@ Retorne apenas o prompt otimizado, sem explicações adicionais.`;
       return optimizedPrompt || basePrompt;
 
     } catch (error) {
-      console.warn('Erro na otimização com IA, usando prompt base:', error);
+      logger.warn('Erro na otimização com IA, usando prompt base:', { error: error instanceof Error ? error.toString() : error });
       return basePrompt;
     }
   }
@@ -195,27 +194,16 @@ Retorne apenas o prompt otimizado, sem explicações adicionais.`;
       .map(s => `${s.order + 1}. ${s.name} (${s.type})${s.required ? ' - OBRIGATÓRIO' : ''}`)
       .join('\n');
 
-    return `Você é um especialista jurídico brasileiro em ${documentClassification.area}, especializado em ${documentClassification.subtype}.
+    const extractedTextPreview = extractedText.substring(0, 1500) + (extractedText.length > 1500 ? '...' : '');
 
-ESTRUTURA DO DOCUMENTO:
-${sectionsDesc}
-
-VARIÁVEIS IDENTIFICADAS:
-${variablesDesc}
-
-ÁREA DE ESPECIALIZAÇÃO: ${documentClassification.area.toUpperCase()}
-SUBTIPO: ${documentClassification.subtype}
-
-INSTRUÇÕES:
-1. Mantenha rigorosamente a estrutura identificada
-2. Use linguagem jurídica formal brasileira
-3. Substitua todas as variáveis pelos valores fornecidos
-4. Preserve formatação e hierarquia
-5. Use fundamentação legal atualizada
-6. Mantenha coerência técnica e jurídica
-
-MODELO DE REFERÊNCIA:
-${extractedText.substring(0, 1500)}${extractedText.length > 1500 ? '...' : ''}`;
+    const template = this.loadPromptTemplate('base_prompt_template.txt');
+    return template
+      .replace(/\$\{documentClassification.area\}/g, documentClassification.area)
+      .replace(/\$\{documentClassification.subtype\}/g, documentClassification.subtype)
+      .replace(/\$\{sectionsDesc\}/g, sectionsDesc)
+      .replace(/\$\{variablesDesc\}/g, variablesDesc)
+      .replace(/\$\{documentClassification.area.toUpperCase\(\)\}/g, documentClassification.area.toUpperCase())
+      .replace(/\$\{extractedTextPreview\}/g, extractedTextPreview);
   }
 
   private generateSpecializations(request: AgentCreationRequest): string[] {

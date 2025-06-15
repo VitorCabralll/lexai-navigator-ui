@@ -1,13 +1,15 @@
 
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { onRequest } from 'firebase-functions/v2/https';
+import * as logger from 'firebase-functions/v2/logger';
 import * as admin from 'firebase-admin';
 import * as express from 'express';
 import * as cors from 'cors';
 import { AIService } from '../services/aiService';
-import { StorageService } from '../services/storageService';
+// import { StorageService } from '../services/storageService'; // Unused
 import { GenerationRequest, ProcessingStep } from '../types/document';
 import { Agent } from '../types/agent';
+import { validateRequest, gerarDocumentoSchema } from '../utils/validation';
+import { handleError } from '../utils/errors';
 
 const app = express();
 app.use(cors({ origin: true }));
@@ -15,22 +17,8 @@ app.use(express.json({ limit: '10mb' }));
 
 app.post('/gerar-documento', async (req, res) => {
   try {
-    const request: GenerationRequest = req.body;
-
-    // Validar request
-    if (!request.mode || !request.workspaceId) {
-      return res.status(400).json({
-        success: false,
-        error: 'mode e workspaceId são obrigatórios'
-      });
-    }
-
-    if (request.mode === 'agent' && !request.agentId) {
-      return res.status(400).json({
-        success: false,
-        error: 'agentId é obrigatório para modo agent'
-      });
-    }
+    const validatedBody = validateRequest(gerarDocumentoSchema, req.body);
+    const request: GenerationRequest = validatedBody;
 
     // Verificar autenticação
     const authHeader = req.headers.authorization;
@@ -120,7 +108,7 @@ app.post('/gerar-documento', async (req, res) => {
 
       // Atualizar documento com resultado
       await documentRef.update({
-        title: this.extractTitle(content) || `Documento - ${new Date().toLocaleDateString()}`,
+        title: extractTitle(content) || `Documento - ${new Date().toLocaleDateString()}`,
         content,
         metadata: {
           generatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -146,7 +134,7 @@ app.post('/gerar-documento', async (req, res) => {
       });
 
     } catch (error) {
-      console.error('Erro na geração:', error);
+      logger.error('Erro na geração:', { error: error instanceof Error ? error.toString() : error });
       
       // Atualizar documento com erro
       await documentRef.update({
@@ -157,19 +145,15 @@ app.post('/gerar-documento', async (req, res) => {
         },
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
-
-      res.status(500).json({
-        success: false,
-        error: 'Erro na geração do documento'
-      });
+      // Padronizar resposta de erro
+      const errorResponse = handleError(error);
+      res.status(errorResponse.statusCode).json(errorResponse);
     }
 
   } catch (error) {
-    console.error('Erro geral:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Erro interno do servidor'
-    });
+    logger.error('Erro geral:', { error: error instanceof Error ? error.toString() : error });
+    const errorResponse = handleError(error);
+    res.status(errorResponse.statusCode).json(errorResponse);
   }
 });
 

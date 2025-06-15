@@ -1,6 +1,7 @@
 
 import * as mammoth from 'mammoth';
-import { DocumentStructure, Section } from '../types/agent';
+import * as logger from 'firebase-functions/v2/logger';
+import { Section } from '../types/agent'; // Removed DocumentStructure
 
 export interface ProcessingResult {
   textoExtraido: string;
@@ -51,7 +52,7 @@ export class DocxProcessor {
         estruturas
       };
     } catch (error) {
-      console.error('Erro ao processar DOCX:', error);
+      logger.error('Erro ao processar DOCX:', { error: error instanceof Error ? error.toString() : error });
       if (error instanceof Error) {
         throw error;
       }
@@ -239,11 +240,11 @@ IMPORTANTE: O documento gerado deve seguir rigorosamente esta estrutura e manter
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Tentativa ${attempt} de ${maxRetries} para processar DOCX`);
+        logger.info(`Tentativa ${attempt} de ${maxRetries} para processar DOCX`);
         return await this.processDocx(buffer);
       } catch (error) {
         lastError = error as Error;
-        console.warn(`Tentativa ${attempt} falhou:`, error);
+        logger.warn(`Tentativa ${attempt} falhou:`, { error: error instanceof Error ? error.toString() : error, attempt, maxRetries });
         
         // Não tentar novamente em erros de validação
         if (error instanceof Error && 

@@ -1,31 +1,27 @@
 
 import { onRequest } from 'firebase-functions/v2/https';
+// import * as logger from 'firebase-functions/v2/logger'; // logger is unused
 import * as admin from 'firebase-admin';
 import { Request, Response } from 'express';
 import { DocumentService } from '../services/documentService';
+import { validateRequest, exportarDocumentoSchema } from '../utils/validation';
+import { handleError } from '../utils/errors';
 
-interface ExportRequest {
-  formato: 'docx' | 'pdf';
-}
 
 async function exportarDocumentoHandler(req: Request, res: Response) {
   try {
     const documentoId = req.params.documentoId;
-    const { formato } = req.body as ExportRequest;
 
-    // Validar parâmetros
+    // Validar corpo da requisição
+    const validatedBody = validateRequest(exportarDocumentoSchema, req.body);
+    const { formato } = validatedBody;
+
+    // Validar parâmetro de rota
     if (!documentoId) {
-      return res.status(400).json({
-        success: false,
-        error: 'documentoId é obrigatório'
-      });
-    }
-
-    if (!formato || (formato !== 'docx' && formato !== 'pdf')) {
-      return res.status(400).json({
-        success: false,
-        error: 'formato deve ser "docx" ou "pdf"'
-      });
+      // Este erro deveria ser pego por uma validação de schema de rota se existisse,
+      // mas por enquanto manteremos uma verificação manual ou deixaremos o handleError pegar.
+      // Para consistência, vamos usar handleError.
+      throw new Error('documentoId é obrigatório');
     }
 
     // Verificar autenticação
@@ -48,35 +44,13 @@ async function exportarDocumentoHandler(req: Request, res: Response) {
     return res.json(resultado);
 
   } catch (error) {
-    console.error('Erro ao exportar documento:', error);
+    // O logger.error já está no handleError, então não precisamos duplicar aqui se handleError for chamado.
+    // No entanto, se quisermos loggar especificamente neste ponto ANTES do handleError, podemos manter.
+    // Por agora, vamos remover e confiar no log dentro do handleError.
+    // logger.error('Erro ao exportar documento:', { error: error instanceof Error ? error.toString() : error });
     
-    if (error instanceof Error) {
-      if (error.message.includes('não encontrado')) {
-        return res.status(404).json({
-          success: false,
-          error: 'Documento não encontrado'
-        });
-      }
-      
-      if (error.message.includes('Acesso negado')) {
-        return res.status(403).json({
-          success: false,
-          error: 'Acesso negado ao documento'
-        });
-      }
-      
-      if (error.message.includes('Formato deve ser')) {
-        return res.status(400).json({
-          success: false,
-          error: error.message
-        });
-      }
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: 'Erro interno do servidor'
-    });
+    const errorResponse = handleError(error);
+    return res.status(errorResponse.statusCode).json(errorResponse);
   }
 }
 

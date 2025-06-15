@@ -78,7 +78,7 @@ const tourSteps = [
 export function OnboardingTour() {
   const [step, setStep] = useState(0);
   const { showTour, endTour } = useOnboardingTour();
-  const navigate = useNavigate();
+  const _navigate = useNavigate(); // Prefixed unused variable
 
   if (!showTour) return null;
   const { title, text } = tourSteps[step];

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, Copy, Download, Edit3, FileText } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, Edit3, FileText } from "lucide-react"; // Removed Download
 import { DocumentEditor } from "./DocumentEditor";
 import { ExportButtons } from "./ExportButtons";
 

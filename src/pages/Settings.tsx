@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Plus, Settings as SettingsIcon, User, Bell, Shield, ArrowLeft } from "lucide-react";
+import { Building2, Plus, Settings as SettingsIcon, User, Shield, ArrowLeft } from "lucide-react"; // Removed Bell
 import { Link } from "react-router-dom";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 
@@ -15,7 +15,7 @@ export default function Settings() {
   const [autoSave, setAutoSave] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   
-  const { workspaces, selectedWorkspace, setSelectedWorkspace, getAgentsForWorkspace } = useWorkspace();
+  const { workspaces, selectedWorkspace, setSelectedWorkspace: _setSelectedWorkspace, getAgentsForWorkspace } = useWorkspace(); // Prefixed setSelectedWorkspace
 
   return (
     <div className="space-y-6">

@@ -1,5 +1,6 @@
 
 import { onRequest } from 'firebase-functions/v2/https';
+import * as logger from 'firebase-functions/v2/logger';
 import * as admin from 'firebase-admin';
 import { Request, Response } from 'express';
 
@@ -47,7 +48,7 @@ async function listarPromptsPublicosHandler(req: Request, res: Response) {
       total: prompts.length
     };
 
-    console.log(`Prompts públicos listados:`, {
+    logger.info(`Prompts públicos listados:`, {
       total: prompts.length,
       tipos: [...new Set(prompts.map(p => p.tipo))]
     });
@@ -55,7 +56,7 @@ async function listarPromptsPublicosHandler(req: Request, res: Response) {
     return res.json(response);
 
   } catch (error) {
-    console.error('Erro ao listar prompts públicos:', error);
+    logger.error('Erro ao listar prompts públicos:', { error: error instanceof Error ? error.toString() : error });
     return res.status(500).json({
       success: false,
       error: 'Erro interno do servidor'

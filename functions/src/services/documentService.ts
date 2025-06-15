@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import * as logger from 'firebase-functions/v2/logger';
 import { Document } from '../types/document';
 import { StorageService } from './storageService';
 import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx';
@@ -85,7 +86,7 @@ export class DocumentService {
       // 7. Calcular data de expiração
       const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
 
-      console.log(`Documento exportado:`, {
+      logger.info(`Documento exportado:`, {
         documentoId,
         formato,
         fileName: nomeArquivo,
@@ -103,7 +104,7 @@ export class DocumentService {
       };
 
     } catch (error) {
-      console.error('Erro ao exportar documento:', error);
+      logger.error('Erro ao exportar documento:', { error: error instanceof Error ? error.toString() : error, documentoId, formato, userId: uid });
       throw error;
     }
   }
@@ -143,7 +144,7 @@ export class DocumentService {
 
       return await Packer.toBuffer(doc);
     } catch (error) {
-      console.error('Erro ao gerar DOCX:', error);
+      logger.error('Erro ao gerar DOCX:', { error: error instanceof Error ? error.toString() : error, title });
       throw new Error('Falha ao gerar arquivo DOCX');
     }
   }
@@ -231,7 +232,7 @@ export class DocumentService {
 
       return Buffer.from(await pdfDoc.save());
     } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
+      logger.error('Erro ao gerar PDF:', { error: error instanceof Error ? error.toString() : error, title });
       throw new Error('Falha ao gerar arquivo PDF');
     }
   }
@@ -305,7 +306,7 @@ export class DocumentService {
       await documentRef.set(documento);
 
       // 8. Log de auditoria
-      console.log(`Documento salvo: ${documentId}`, {
+      logger.info(`Documento salvo: ${documentId}`, {
         userId: uid,
         workspaceId,
         tipo,
@@ -319,7 +320,7 @@ export class DocumentService {
       };
 
     } catch (error) {
-      console.error('Erro ao salvar documento:', error);
+      logger.error('Erro ao salvar documento:', { error: error instanceof Error ? error.toString() : error, userId: uid, workspaceId, tipo });
       throw error;
     }
   }
@@ -390,7 +391,7 @@ export class DocumentService {
       return documento;
       
     } catch (error) {
-      console.error('Erro ao buscar documento:', error);
+      logger.error('Erro ao buscar documento:', { error: error instanceof Error ? error.toString() : error, documentId, userId: uid });
       throw error;
     }
   }
@@ -416,7 +417,7 @@ export class DocumentService {
       return snapshot.docs.map(doc => doc.data() as Document);
       
     } catch (error) {
-      console.error('Erro ao listar documentos:', error);
+      logger.error('Erro ao listar documentos:', { error: error instanceof Error ? error.toString() : error, userId: uid, workspaceId });
       throw error;
     }
   }

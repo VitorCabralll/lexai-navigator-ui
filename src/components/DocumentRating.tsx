@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Star, ThumbsUp, ThumbsDown, MessageSquare, Send, Sparkles } from "lucide-react";
+import { Star, ThumbsUp, ThumbsDown, Send, Sparkles } from "lucide-react"; // Removed MessageSquare
 import { useToast } from "@/hooks/use-toast";
 
 interface DocumentRatingProps {
@@ -81,7 +81,7 @@ export function DocumentRating({ documentId, documentTitle, onRatingSubmit }: Do
       setRating(0);
       setFeedback("");
       setSelectedCategories([]);
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Erro ao enviar feedback",
         description: "Tente novamente em alguns instantes",

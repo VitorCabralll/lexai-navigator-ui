@@ -34,8 +34,10 @@ export class NotFoundError extends AppError {
   }
 }
 
-export function handleError(error: any) {
-  console.error('Erro capturado:', error);
+import * as logger from 'firebase-functions/v2/logger';
+
+export function handleError(error: unknown) {
+  logger.error('Erro capturado:', { error: error instanceof Error ? error.toString() : String(error), stack: error instanceof Error ? error.stack : undefined });
 
   if (error instanceof AppError) {
     return {

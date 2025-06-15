@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, FileText, Users, Zap, Scale, Gavel } from "lucide-react";
+import { FileText, Zap, Scale, Gavel } from "lucide-react"; // Removed Brain, Users
 import { useNavigate } from "react-router-dom";
 
 export default function Welcome() {
