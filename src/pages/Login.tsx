@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/enhanced-toast";
+import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { loginSchema, type LoginFormData } from "@/schemas/validationSchemas";
@@ -37,23 +38,24 @@ export default function Login() {
     try {
       if (isSignUp) {
         await signUp(formData.email, formData.password);
-        toast.success({
+        toast({
           title: "Conta criada com sucesso!",
           description: "Bem-vindo ao LexAI"
         });
         navigate("/onboarding");
       } else {
         await signIn(formData.email, formData.password);
-        toast.success({
+        toast({
           title: "Login realizado!",
           description: "Bem-vindo de volta ao LexAI"
         });
         navigate("/dashboard");
       }
     } catch (error: any) {
-      toast.error({
+      toast({
         title: "Erro na autenticação",
-        description: error.message || "Ocorreu um erro. Tente novamente."
+        description: error.message || "Ocorreu um erro. Tente novamente.",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -65,15 +67,16 @@ export default function Login() {
 
     try {
       await signInWithGoogle();
-      toast.success({
+      toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo ao LexAI"
       });
       navigate("/dashboard");
     } catch (error: any) {
-      toast.error({
+      toast({
         title: "Erro no login com Google",
-        description: error.message || "Ocorreu um erro. Tente novamente."
+        description: error.message || "Ocorreu um erro. Tente novamente.",
+        variant: "destructive"
       });
     } finally {
       setGoogleLoading(false);
