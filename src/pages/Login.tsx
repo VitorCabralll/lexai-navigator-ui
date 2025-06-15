@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/enhanced-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { loginSchema, type LoginFormData } from "@/schemas/validationSchemas";
@@ -37,22 +37,21 @@ export default function Login() {
     try {
       if (isSignUp) {
         await signUp(formData.email, formData.password);
-        toast({
+        toast.success({
           title: "Conta criada com sucesso!",
           description: "Bem-vindo ao LexAI"
         });
         navigate("/onboarding");
       } else {
         await signIn(formData.email, formData.password);
-        toast({
+        toast.success({
           title: "Login realizado!",
           description: "Bem-vindo de volta ao LexAI"
         });
         navigate("/dashboard");
       }
     } catch (error: any) {
-      toast({
-        variant: "destructive",
+      toast.error({
         title: "Erro na autenticação",
         description: error.message || "Ocorreu um erro. Tente novamente."
       });
@@ -66,14 +65,13 @@ export default function Login() {
 
     try {
       await signInWithGoogle();
-      toast({
+      toast.success({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo ao LexAI"
       });
       navigate("/dashboard");
     } catch (error: any) {
-      toast({
-        variant: "destructive",
+      toast.error({
         title: "Erro no login com Google",
         description: error.message || "Ocorreu um erro. Tente novamente."
       });
@@ -83,12 +81,17 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">LexAI</CardTitle>
+          <div className="flex justify-center mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xl">L</span>
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold">LexAI</CardTitle>
           <CardDescription>
-            {isSignUp ? "Criar conta" : "Entrar na sua conta"}
+            {isSignUp ? "Crie sua conta para começar" : "Entre na sua conta para acessar a plataforma"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -182,7 +185,7 @@ export default function Login() {
               onClick={() => setIsSignUp(!isSignUp)}
               className="text-sm"
             >
-              {isSignUp ? "Já tem conta? Entrar" : "Criar conta"}
+              {isSignUp ? "Já tem uma conta? Entrar" : "Não tem uma conta? Criar conta"}
             </Button>
           </div>
         </CardContent>
