@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOut, User, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { WorkspaceSelector } from "./WorkspaceSelector";
 
 export function Header() {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export function Header() {
     <header className="flex items-center justify-between p-4 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center gap-4">
         <SidebarTrigger />
+        <WorkspaceSelector />
       </div>
 
       <div className="flex items-center gap-4">
