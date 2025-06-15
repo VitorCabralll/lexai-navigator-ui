@@ -43,16 +43,16 @@ const mainItems = [
 
 const manageItems = [
   {
-    title: "Meus Assistentes",
+    title: "Meus Modelos",
     url: "/agents",
     icon: Users,
-    description: "Ver e gerenciar assistentes"
+    description: "Ver e gerenciar assistentes inteligentes"
   },
   {
-    title: "Minhas Áreas",
+    title: "Meu Escritório",
     url: "/workspace",
     icon: Building2,
-    description: "Gerenciar ambientes de trabalho"
+    description: "Gerenciar área de trabalho"
   }
 ];
 
@@ -89,11 +89,11 @@ export function AppSidebar() {
         {/* Workspace Info */}
         {selectedWorkspace && (
           <SidebarGroup>
-            <SidebarGroupLabel>Área Atual</SidebarGroupLabel>
+            <SidebarGroupLabel>Escritório Atual</SidebarGroupLabel>
             <SidebarGroupContent>
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                 <p className="font-medium text-blue-900 text-sm">{selectedWorkspace.name}</p>
-                <p className="text-xs text-blue-700">{selectedWorkspace.description}</p>
+                <p className="text-xs text-blue-700">Seu ambiente de trabalho jurídico</p>
               </div>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -120,17 +120,17 @@ export function AppSidebar() {
 
         {/* Quick Create */}
         <SidebarGroup>
-          <SidebarGroupLabel>Criar Rápido</SidebarGroupLabel>
+          <SidebarGroupLabel>Criação Rápida</SidebarGroupLabel>
           <SidebarGroupContent>
             <div className="space-y-2">
               <Button asChild variant="outline" size="sm" className="w-full justify-start text-xs">
-                <Link to="/generate?type=peticao">
+                <Link to="/generate?step=2&type=peticao">
                   <FileText className="mr-2 h-3 w-3" />
                   Nova Petição
                 </Link>
               </Button>
               <Button asChild variant="outline" size="sm" className="w-full justify-start text-xs">
-                <Link to="/generate?type=parecer">
+                <Link to="/generate?step=2&type=parecer">
                   <FileText className="mr-2 h-3 w-3" />
                   Novo Parecer
                 </Link>
@@ -138,7 +138,7 @@ export function AppSidebar() {
               <Button asChild variant="outline" size="sm" className="w-full justify-start text-xs">
                 <Link to="/agents/create">
                   <Plus className="mr-2 h-3 w-3" />
-                  Novo Assistente
+                  Novo Modelo
                 </Link>
               </Button>
             </div>
@@ -148,7 +148,7 @@ export function AppSidebar() {
         {/* Assistentes Rápidos */}
         {(officialAgents.length > 0 || workspaceAgents.length > 0) && (
           <SidebarGroup>
-            <SidebarGroupLabel>Assistentes Favoritos</SidebarGroupLabel>
+            <SidebarGroupLabel>Modelos Favoritos</SidebarGroupLabel>
             <SidebarGroupContent>
               <div className="space-y-1">
                 {officialAgents.slice(0, 2).map((agent) => (
@@ -159,7 +159,7 @@ export function AppSidebar() {
                     size="sm"
                     className="w-full justify-start text-xs h-8"
                   >
-                    <Link to={`/generate?agent=${agent.id}`}>
+                    <Link to={`/generate?step=3&agent=${agent.id}`}>
                       <Crown className="mr-2 h-3 w-3 text-yellow-500" />
                       <span className="truncate">{agent.name}</span>
                     </Link>
@@ -173,7 +173,7 @@ export function AppSidebar() {
                     size="sm"
                     className="w-full justify-start text-xs h-8"
                   >
-                    <Link to={`/generate?agent=${agent.id}`}>
+                    <Link to={`/generate?step=3&agent=${agent.id}`}>
                       <Users className="mr-2 h-3 w-3 text-blue-500" />
                       <span className="truncate">{agent.name}</span>
                     </Link>
