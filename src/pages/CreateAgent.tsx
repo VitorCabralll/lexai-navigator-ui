@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Upload, FileText, Bot, CheckCircle } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Bot, CheckCircle, Lightbulb } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
@@ -27,12 +27,12 @@ export default function CreateAgent() {
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
-            <h2 className="text-xl font-bold mb-2">Nenhum ambiente selecionado</h2>
+            <h2 className="text-xl font-bold mb-2">Nenhuma área selecionada</h2>
             <p className="text-muted-foreground mb-4">
-              Você precisa ter um ambiente ativo para criar agentes
+              Você precisa ter uma área de trabalho ativa para criar assistentes
             </p>
             <Button asChild>
-              <Link to="/workspace">Gerenciar Ambientes</Link>
+              <Link to="/workspace">Gerenciar Áreas de Trabalho</Link>
             </Button>
           </CardContent>
         </Card>
@@ -75,7 +75,7 @@ export default function CreateAgent() {
       addAgent(newAgent);
 
       toast({
-        title: "Agente criado com sucesso!",
+        title: "Assistente criado com sucesso!",
         description: `${agentName} foi criado e está pronto para uso`,
       });
 
@@ -91,9 +91,9 @@ export default function CreateAgent() {
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
               <Bot className="h-8 w-8 text-blue-600 animate-pulse" />
             </div>
-            <h2 className="text-xl font-bold">Analisando documento...</h2>
+            <h2 className="text-xl font-bold">Analisando seu documento...</h2>
             <p className="text-muted-foreground">
-              Nossa IA está analisando seu modelo e criando o agente personalizado
+              Nossa inteligência artificial está estudando seu modelo e criando o assistente personalizado
             </p>
             <div className="space-y-2">
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -118,26 +118,26 @@ export default function CreateAgent() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">Criar Agente</h1>
+          <h1 className="text-3xl font-bold">Criar Assistente Inteligente</h1>
           <p className="text-muted-foreground">
-            Ambiente: <span className="font-medium">{selectedWorkspace?.name}</span>
+            Área atual: <span className="font-medium">{selectedWorkspace?.name}</span>
           </p>
         </div>
       </div>
 
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>Novo Agente de IA</CardTitle>
+          <CardTitle>Novo Assistente Personalizado</CardTitle>
           <CardDescription>
-            Anexe um modelo de documento e nossa IA criará um agente especializado automaticamente
+            Anexe um modelo de documento e nossa IA criará um assistente especializado automaticamente
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Upload do arquivo */}
             <div className="space-y-2">
-              <Label htmlFor="document">Modelo de Documento (.docx)</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <Label htmlFor="document">Seu Modelo de Documento (.docx)</Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                 <input
                   type="file"
                   id="document"
@@ -151,15 +151,15 @@ export default function CreateAgent() {
                       <CheckCircle className="h-8 w-8 text-green-500 mx-auto" />
                       <p className="font-medium">{selectedFile.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        Arquivo selecionado com sucesso
+                        Arquivo carregado com sucesso! 
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-2">
                       <Upload className="h-8 w-8 text-gray-400 mx-auto" />
-                      <p className="font-medium">Clique para selecionar arquivo</p>
+                      <p className="font-medium">Clique para escolher seu arquivo</p>
                       <p className="text-sm text-muted-foreground">
-                        Anexe um modelo de parecer, petição ou outro documento
+                        Anexe um modelo de petição, parecer, contrato ou outro documento que você usa
                       </p>
                     </div>
                   )}
@@ -167,24 +167,27 @@ export default function CreateAgent() {
               </div>
             </div>
 
-            {/* Nome do agente */}
+            {/* Nome do assistente */}
             <div className="space-y-2">
-              <Label htmlFor="agent-name">Nome do Agente</Label>
+              <Label htmlFor="agent-name">Nome do Assistente</Label>
               <Input
                 id="agent-name"
-                placeholder="Ex: Parecer Ambiental, Denúncia Criminal..."
+                placeholder="Ex: Assistente de Pareceres Ambientais, Criador de Petições Trabalhistas..."
                 value={agentName}
                 onChange={(e) => setAgentName(e.target.value)}
                 required
               />
+              <p className="text-xs text-muted-foreground">
+                Dê um nome descritivo para identificar facilmente seu assistente
+              </p>
             </div>
 
             {/* Tema/Especialidade com Select */}
             <div className="space-y-2">
-              <Label htmlFor="agent-theme">Matéria Jurídica</Label>
+              <Label htmlFor="agent-theme">Área Jurídica de Especialização</Label>
               <Select value={agentTheme} onValueChange={(value: LegalSubject) => setAgentTheme(value)} required>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione a matéria jurídica" />
+                  <SelectValue placeholder="Selecione a área de atuação" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
                   {LEGAL_SUBJECTS.map((subject) => (
@@ -194,6 +197,9 @@ export default function CreateAgent() {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Escolha a área jurídica principal do seu documento modelo
+              </p>
             </div>
 
             {/* Botões */}
@@ -204,7 +210,7 @@ export default function CreateAgent() {
                 className="flex-1"
               >
                 <Bot className="mr-2 h-4 w-4" />
-                Criar Agente
+                Criar Meu Assistente
               </Button>
               <Button type="button" variant="outline" asChild>
                 <Link to="/dashboard">Cancelar</Link>
@@ -215,28 +221,36 @@ export default function CreateAgent() {
       </Card>
 
       {/* Informações sobre o processo */}
-      <Card className="max-w-2xl">
+      <Card className="max-w-2xl bg-blue-50 border-blue-200">
         <CardHeader>
-          <CardTitle className="text-lg">Como funciona?</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2 text-blue-900">
+            <Lightbulb className="h-5 w-5" />
+            Como funciona?
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-bold text-blue-600">1</span>
+            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-xs font-bold text-white">1</span>
             </div>
-            <p className="text-sm">Anexe um modelo de documento (.docx)</p>
+            <p className="text-sm text-blue-800">Você anexa um documento modelo (.docx) que usa frequentemente</p>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-bold text-blue-600">2</span>
+            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-xs font-bold text-white">2</span>
             </div>
-            <p className="text-sm">Nossa IA analisa a estrutura e conteúdo</p>
+            <p className="text-sm text-blue-800">Nossa IA analisa a estrutura, linguagem e padrões do seu documento</p>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-bold text-blue-600">3</span>
+            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-xs font-bold text-white">3</span>
             </div>
-            <p className="text-sm">O agente é criado automaticamente e fica pronto para uso</p>
+            <p className="text-sm text-blue-800">O assistente é criado e fica disponível para gerar documentos similares</p>
+          </div>
+          <div className="bg-blue-100 p-3 rounded-lg mt-4">
+            <p className="text-sm text-blue-800 font-medium">
+              💡 Dica: Quanto melhor for seu modelo, mais preciso será o assistente!
+            </p>
           </div>
         </CardContent>
       </Card>

@@ -1,4 +1,15 @@
 
+import { 
+  Home, 
+  FileText, 
+  Users, 
+  Settings, 
+  Building2, 
+  HelpCircle,
+  Plus,
+  Crown
+} from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -11,84 +22,93 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Settings, FileText, Plus, Building2, ChevronDown, ChevronRight } from "lucide-react";
-import { useLocation, Link } from "react-router-dom";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { Button } from "@/components/ui/button";
-import { LEGAL_SUBJECT_ICONS, LEGAL_SUBJECT_COLORS } from "@/types/legalSubjectIcons";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const mainMenuItems = [
+const mainItems = [
   {
-    title: "Dashboard",
+    title: "Início",
     url: "/dashboard",
-    icon: LayoutDashboard,
+    icon: Home,
+    description: "Página principal"
   },
   {
-    title: "Gerar Documento",
+    title: "Criar Documento",
     url: "/generate",
     icon: FileText,
+    description: "Gerar novos documentos"
+  }
+];
+
+const manageItems = [
+  {
+    title: "Meus Assistentes",
+    url: "/agents",
+    icon: Users,
+    description: "Ver e gerenciar assistentes"
   },
+  {
+    title: "Minhas Áreas",
+    url: "/workspace",
+    icon: Building2,
+    description: "Gerenciar ambientes de trabalho"
+  }
+];
+
+const configItems = [
   {
     title: "Configurações",
     url: "/settings",
     icon: Settings,
-  },
+    description: "Preferências e configurações"
+  }
 ];
 
 export function AppSidebar() {
   const location = useLocation();
-  const { 
-    workspaces, 
-    selectedWorkspace, 
-    setSelectedWorkspace, 
-    getAgentsByLegalSubject,
-    getAvailableLegalSubjects,
-    officialAgents
-  } = useWorkspace();
-  
-  const [expandedSubjects, setExpandedSubjects] = useState<string[]>([]);
+  const { selectedWorkspace, getAgentsForWorkspace, officialAgents } = useWorkspace();
 
-  const handleWorkspaceSelect = (workspace: any) => {
-    setSelectedWorkspace(workspace);
-    window.history.pushState({}, '', `/dashboard?workspace=${workspace.id}`);
-  };
-
-  const toggleSubject = (subject: string) => {
-    setExpandedSubjects(prev => 
-      prev.includes(subject) 
-        ? prev.filter(s => s !== subject)
-        : [...prev, subject]
-    );
-  };
+  const workspaceAgents = selectedWorkspace ? getAgentsForWorkspace(selectedWorkspace.id) : [];
 
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4">
+    <Sidebar className="bg-white border-r">
+      <SidebarHeader className="border-b px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">L</span>
           </div>
-          <h1 className="text-lg font-bold text-sidebar-foreground">LexAI</h1>
+          <div>
+            <h2 className="font-bold text-lg">LexAI</h2>
+            <p className="text-xs text-muted-foreground">Inteligência Jurídica</p>
+          </div>
         </div>
       </SidebarHeader>
-      
-      <SidebarContent>
-        {/* Menu Principal */}
+
+      <SidebarContent className="px-4">
+        {/* Workspace Info */}
+        {selectedWorkspace && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Área Atual</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <p className="font-medium text-blue-900 text-sm">{selectedWorkspace.name}</p>
+                <p className="text-xs text-blue-700">{selectedWorkspace.description}</p>
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Main Actions */}
         <SidebarGroup>
-          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
+          <SidebarGroupLabel>Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainMenuItems.map((item) => (
+              {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={location.pathname === item.url}
-                  >
-                    <Link to={item.url}>
-                      <item.icon />
+                  <SidebarMenuButton asChild isActive={location.pathname === item.url}>
+                    <Link to={item.url} className="flex items-center gap-3 px-3 py-2">
+                      <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -98,154 +118,123 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Meus Ambientes */}
+        {/* Quick Create */}
         <SidebarGroup>
-          <div className="flex items-center justify-between px-2">
-            <SidebarGroupLabel>Meus Ambientes</SidebarGroupLabel>
-            <Button size="sm" variant="ghost" asChild>
-              <Link to="/workspace">
-                <Plus className="h-3 w-3" />
-              </Link>
-            </Button>
-          </div>
+          <SidebarGroupLabel>Criar Rápido</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="space-y-2">
+              <Button asChild variant="outline" size="sm" className="w-full justify-start text-xs">
+                <Link to="/generate?type=peticao">
+                  <FileText className="mr-2 h-3 w-3" />
+                  Nova Petição
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="w-full justify-start text-xs">
+                <Link to="/generate?type=parecer">
+                  <FileText className="mr-2 h-3 w-3" />
+                  Novo Parecer
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="w-full justify-start text-xs">
+                <Link to="/agents/create">
+                  <Plus className="mr-2 h-3 w-3" />
+                  Novo Assistente
+                </Link>
+              </Button>
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Assistentes Rápidos */}
+        {(officialAgents.length > 0 || workspaceAgents.length > 0) && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Assistentes Favoritos</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className="space-y-1">
+                {officialAgents.slice(0, 2).map((agent) => (
+                  <Button
+                    key={agent.id}
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start text-xs h-8"
+                  >
+                    <Link to={`/generate?agent=${agent.id}`}>
+                      <Crown className="mr-2 h-3 w-3 text-yellow-500" />
+                      <span className="truncate">{agent.name}</span>
+                    </Link>
+                  </Button>
+                ))}
+                {workspaceAgents.slice(0, 2).map((agent) => (
+                  <Button
+                    key={agent.id}
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start text-xs h-8"
+                  >
+                    <Link to={`/generate?agent=${agent.id}`}>
+                      <Users className="mr-2 h-3 w-3 text-blue-500" />
+                      <span className="truncate">{agent.name}</span>
+                    </Link>
+                  </Button>
+                ))}
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Management */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Gerenciar</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {workspaces.map((workspace) => (
-                <SidebarMenuItem key={workspace.id}>
-                  <SidebarMenuButton 
-                    onClick={() => handleWorkspaceSelect(workspace)}
-                    isActive={selectedWorkspace?.id === workspace.id}
-                    className="cursor-pointer"
-                  >
-                    <Building2 className={workspace.iconColor} />
-                    <span>{workspace.name}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              {workspaces.length === 0 && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link to="/workspace" className="text-muted-foreground">
-                      <Plus />
-                      <span>Criar primeiro ambiente</span>
+              {manageItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={location.pathname === item.url}>
+                    <Link to={item.url} className="flex items-center gap-3 px-3 py-2">
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                      {item.url === "/agents" && workspaceAgents.length > 0 && (
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          {workspaceAgents.length}
+                        </Badge>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              )}
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Agentes por Matéria - só aparece se há workspace selecionado */}
-        {selectedWorkspace && (
-          <SidebarGroup>
-            <div className="flex items-center justify-between px-2">
-              <SidebarGroupLabel>Agentes por Matéria</SidebarGroupLabel>
-              <Button size="sm" variant="ghost" asChild>
-                <Link to="/agents/create">
-                  <Plus className="h-3 w-3" />
-                </Link>
-              </Button>
-            </div>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {/* Agentes Oficiais */}
-                <SidebarMenuItem>
-                  <Collapsible>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton className="w-full justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-gold rounded-full"></div>
-                          <span>Agentes Oficiais</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Badge variant="secondary" className="h-5 text-xs">
-                            {officialAgents.length}
-                          </Badge>
-                          <ChevronRight className="h-4 w-4" />
-                        </div>
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="ml-4 space-y-1">
-                      {officialAgents.map((agent) => {
-                        const IconComponent = LEGAL_SUBJECT_ICONS[agent.type];
-                        const iconColor = LEGAL_SUBJECT_COLORS[agent.type];
-                        return (
-                          <SidebarMenuItem key={agent.id}>
-                            <SidebarMenuButton size="sm" className="pl-4">
-                              <IconComponent className={`h-4 w-4 ${iconColor}`} />
-                              <span className="text-sm">{agent.name}</span>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        );
-                      })}
-                    </CollapsibleContent>
-                  </Collapsible>
+        {/* Configuration */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Configurações</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {configItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={location.pathname === item.url}>
+                    <Link to={item.url} className="flex items-center gap-3 px-3 py-2">
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
-
-                {/* Agentes por Matéria */}
-                {getAvailableLegalSubjects(selectedWorkspace.id).map((subject) => {
-                  const agentsInSubject = getAgentsByLegalSubject(selectedWorkspace.id, subject);
-                  const IconComponent = LEGAL_SUBJECT_ICONS[subject];
-                  const iconColor = LEGAL_SUBJECT_COLORS[subject];
-                  const isExpanded = expandedSubjects.includes(subject);
-
-                  return (
-                    <SidebarMenuItem key={subject}>
-                      <Collapsible open={isExpanded} onOpenChange={() => toggleSubject(subject)}>
-                        <CollapsibleTrigger asChild>
-                          <SidebarMenuButton className="w-full justify-between">
-                            <div className="flex items-center gap-2">
-                              <IconComponent className={`h-4 w-4 ${iconColor}`} />
-                              <span className="text-sm">{subject}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Badge variant="secondary" className="h-5 text-xs">
-                                {agentsInSubject.length}
-                              </Badge>
-                              {isExpanded ? (
-                                <ChevronDown className="h-4 w-4" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4" />
-                              )}
-                            </div>
-                          </SidebarMenuButton>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="ml-4 space-y-1">
-                          {agentsInSubject.map((agent) => (
-                            <SidebarMenuItem key={agent.id}>
-                              <SidebarMenuButton size="sm" className="pl-4">
-                                <div className="w-2 h-2 bg-current rounded-full opacity-60"></div>
-                                <span className="text-sm">{agent.name}</span>
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
-                          ))}
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </SidebarMenuItem>
-                  );
-                })}
-
-                {getAvailableLegalSubjects(selectedWorkspace.id).length === 0 && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link to="/agents/create" className="text-muted-foreground">
-                        <Plus className="h-4 w-4" />
-                        <span className="text-sm">Criar primeiro agente</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
-        <div className="text-xs text-muted-foreground">
-          © 2024 LexAI - Inteligência Jurídica
-        </div>
+      <SidebarFooter className="border-t px-4 py-3">
+        <Button asChild variant="ghost" size="sm" className="w-full justify-start text-xs">
+          <a href="#" className="flex items-center gap-2">
+            <HelpCircle className="h-3 w-3" />
+            Ajuda e Suporte
+          </a>
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );
