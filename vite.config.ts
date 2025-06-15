@@ -15,12 +15,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' && componentTagger({
-      // Optimize tagger configuration
-      exclude: [/node_modules/], // Exclude node_modules
-      include: [/\.tsx?$/], // Only tag TypeScript/React files
-      minify: true, // Reduce metadata size
-    }),
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {

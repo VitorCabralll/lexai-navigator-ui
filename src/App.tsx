@@ -1,10 +1,11 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import { OnboardingTourProvider } from "@/contexts/OnboardingTourContext";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 import Index from "./pages/Index";
 import Login from "./pages/Login";
