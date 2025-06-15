@@ -1,232 +1,435 @@
 
-# LexAI - Documentação do Projeto
+# LexAI - Documentação Técnica
 
 ## 📋 Visão Geral
 
 LexAI é uma plataforma de inteligência artificial especializada na geração de documentos jurídicos. O sistema permite que usuários utilizem agentes inteligentes ou prompts predefinidos para criar documentos jurídicos personalizados com base em documentos de apoio e modelos de referência.
 
-## 🏗️ Arquitetura do Projeto
+## 🏗️ Arquitetura do Sistema
 
-### Tecnologias Utilizadas
+### Stack Tecnológico
 - **Frontend**: React 18 + TypeScript + Vite
 - **Styling**: Tailwind CSS + shadcn/ui
 - **Roteamento**: React Router DOM
 - **Estado**: Context API + React Query
-- **Upload/OCR**: Tesseract.js
+- **Backend**: Firebase (Auth, Firestore, Functions, Storage)
+- **IA**: OpenAI API
+- **OCR**: Tesseract.js
 - **Exportação**: jsPDF + docx
-- **Ícones**: Lucide React
 
-### Estrutura de Pastas
+### Arquitetura de Componentes
 ```
-src/
-├── components/          # Componentes reutilizáveis
-│   ├── ui/             # Componentes base do shadcn/ui
-│   ├── Layout.tsx      # Layout principal da aplicação
-│   ├── PromptGrid.tsx  # Grid de seleção de prompts
-│   ├── PromptSearch.tsx # Busca e filtros de prompts
-│   ├── FileUpload.tsx  # Upload e processamento de arquivos
-│   ├── GenerationProgress.tsx # Indicador de progresso
-│   ├── DocumentEditor.tsx # Editor de documentos
-│   ├── ExpandableDocument.tsx # Visualizador/editor expandível
-│   └── ExportButtons.tsx # Botões de exportação
-├── contexts/           # Contextos React
-│   └── WorkspaceContext.tsx # Gerenciamento de workspaces
-├── hooks/              # Hooks customizados
-│   ├── useAuth.tsx     # Autenticação
-│   ├── use-toast.ts    # Sistema de notificações
-│   └── useTheme.tsx    # Gerenciamento de tema
-├── pages/              # Páginas da aplicação
-│   ├── onboarding/     # Fluxo de onboarding
-│   ├── Generate.tsx    # Página principal de geração
-│   ├── Dashboard.tsx   # Dashboard do usuário
-│   ├── Agents.tsx      # Gerenciamento de agentes
-│   └── ...
-├── types/              # Definições de tipos
-│   └── prompts.ts      # Tipos dos prompts predefinidos
-└── lib/                # Utilitários e configurações
-    ├── firebase.ts     # Configuração Firebase
-    └── utils.ts        # Funções utilitárias
+App
+├── AuthProvider (Autenticação)
+│   └── WorkspaceProvider (Contexto de workspace)
+│       └── Layout (Layout principal)
+│           ├── AppSidebar (Navegação lateral)
+│           ├── Header (Cabeçalho)
+│           └── Páginas
+│               ├── Generate (Geração de documentos)
+│               ├── Dashboard (Painel principal)
+│               ├── Agents (Gerenciamento de agentes)
+│               └── Settings (Configurações)
 ```
-
-## 🎯 Funcionalidades Principais
-
-### 1. Geração de Documentos
-- **Modos de Geração**:
-  - Agentes Inteligentes: Utilizando agentes customizados ou oficiais
-  - Prompts Predefinidos: Templates para tipos específicos de documentos
-
-### 2. Upload e Processamento de Arquivos
-- **Documentos de Apoio**: Múltiplos arquivos com OCR automático
-- **Modelos de Referência**: Templates .docx para formatação
-- **Modo Rigoroso**: Seguir exatamente o modelo fornecido
-
-### 3. Sistema de Agentes
-- **Agentes Oficiais**: Pré-configurados pela plataforma
-- **Agentes Personalizados**: Criados pelos usuários
-- **Workspaces**: Organização por ambiente de trabalho
 
 ## 🔧 Componentes Principais
 
 ### FileUpload
 **Localização**: `src/components/FileUpload.tsx`
-**Funcionalidades**:
-- Drag & drop para upload
-- OCR automático para imagens
+
+Gerencia upload e processamento de arquivos com OCR automático:
+- Drag & drop com feedback visual
+- OCR para imagens usando Tesseract.js
 - Validação de tipos de arquivo
-- Feedback visual de progresso
 - Separação entre documentos de apoio e modelos
+- Progress indicators e toast notifications
 
 ### PromptGrid
 **Localização**: `src/components/PromptGrid.tsx`
-**Funcionalidades**:
-- Grid responsivo de prompts
+
+Exibe grid responsivo de prompts predefinidos:
+- Layout responsivo (1-3 colunas)
 - Sistema de busca integrado
 - Filtros por categoria
-- Seleção visual com feedback
+- Estados de seleção visual
+- Categorização automática
 
 ### GenerationProgress
 **Localização**: `src/components/GenerationProgress.tsx`
-**Funcionalidades**:
-- Progresso detalhado da geração
-- Animações suaves
-- Feedback contextual por etapa
+
+Indicador de progresso da geração:
+- 4 etapas animadas de processamento
+- Barra de progresso suave
+- Descrições contextuais
+- Auto-complete com callback
 
 ### ExpandableDocument
 **Localização**: `src/components/ExpandableDocument.tsx`
-**Funcionalidades**:
-- Visualização e edição do documento
+
+Visualizador e editor de documentos:
 - Modo expandido/colapsado
+- Edição inline do conteúdo
 - Exportação para PDF/DOCX
+- Preview em tempo real
 
-## 📝 Fluxo de Uso
+## 🎯 Fluxo de Funcionamento
 
-### 1. Configuração
-1. Usuário seleciona modo de geração (Agente ou Prompt)
-2. Escolhe agente/prompt específico
-3. Adiciona instruções personalizadas
+### 1. Autenticação
+```typescript
+// Contexto de autenticação
+const { user, signIn, signOut } = useAuth();
 
-### 2. Upload de Arquivos
-1. Anexa documentos de apoio (opcional)
-2. Faz upload de modelo de referência (opcional)
-3. Configura modo rigoroso se necessário
+// Providers suportados
+- Email/Password
+- Google OAuth
+```
 
-### 3. Geração
-1. Sistema processa documentos com OCR
-2. Aplica inteligência do agente/prompt
-3. Gera conteúdo jurídico baseado no contexto
-4. Finaliza com formatação adequada
+### 2. Seleção de Modo
+```typescript
+// Modos de geração
+type GenerationMode = 'agent' | 'prompt';
 
-### 4. Edição e Exportação
-1. Usuário pode editar o documento gerado
-2. Exporta para PDF ou DOCX
-3. Salva para uso futuro
+// Agentes (oficiais ou personalizados)
+interface Agent {
+  id: string;
+  name: string;
+  theme: string;
+  description: string;
+  isOfficial: boolean;
+}
+
+// Prompts predefinidos
+interface PredefinedPrompt {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+}
+```
+
+### 3. Upload de Arquivos
+```typescript
+interface UploadedFile {
+  id: string;
+  name: string;
+  type: string;
+  content?: string; // Texto extraído via OCR
+}
+
+// Tipos de arquivo
+- Documentos de apoio (múltiplos)
+- Modelo de referência (único)
+- Modo rigoroso (seguir modelo exatamente)
+```
+
+### 4. Geração de Documento
+```typescript
+// Processo de geração
+1. Leitura de documentos (OCR)
+2. Aplicação de inteligência (IA)
+3. Redação jurídica
+4. Finalização do documento
+```
+
+## 🔥 Integração Firebase
+
+### Configuração
+```typescript
+// src/lib/firebase.ts
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  // ...
+};
+```
+
+### Estrutura de Dados
+
+#### Usuários
+```typescript
+interface User {
+  uid: string;
+  email: string;
+  displayName?: string;
+  createdAt: Date;
+}
+```
+
+#### Workspaces
+```typescript
+interface Workspace {
+  id: string;
+  name: string;
+  ownerId: string;
+  members: string[];
+  createdAt: Date;
+}
+```
+
+#### Agentes
+```typescript
+interface Agent {
+  id: string;
+  name: string;
+  theme: string;
+  prompt: string;
+  workspaceId?: string;
+  isOfficial: boolean;
+  createdBy: string;
+}
+```
+
+#### Documentos
+```typescript
+interface Document {
+  id: string;
+  title: string;
+  content: string;
+  type: 'agent' | 'prompt';
+  agentId?: string;
+  promptId?: string;
+  supportFiles: UploadedFile[];
+  templateFile?: UploadedFile;
+  strictMode: boolean;
+  createdBy: string;
+  workspaceId: string;
+  createdAt: Date;
+}
+```
+
+## 🛡️ Segurança
+
+### Regras Firestore
+```javascript
+// Acesso baseado em workspace
+match /workspaces/{workspaceId} {
+  allow read, write: if request.auth.uid in resource.data.members;
+}
+
+// Documentos privados por workspace
+match /documents/{documentId} {
+  allow read, write: if request.auth != null &&
+    request.auth.uid in get(/databases/$(database)/documents/workspaces/$(resource.data.workspaceId)).data.members;
+}
+```
+
+### Validação de Upload
+```typescript
+// Tipos permitidos
+const ALLOWED_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/jpeg',
+  'image/png'
+];
+
+// Tamanho máximo: 50MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
+```
 
 ## 🎨 Sistema de Design
 
-### Cores Principais
-- **Primary**: Azul para elementos interativos
-- **Success**: Verde para feedback positivo
-- **Warning**: Amarelo para alertas
-- **Destructive**: Vermelho para ações perigosas
+### Paleta de Cores
+```css
+/* Cores principais */
+--primary: blue-600
+--success: green-600
+--warning: yellow-600
+--destructive: red-600
 
-### Componentes UI
-Baseados no shadcn/ui com customizações:
-- Cards para agrupamento
-- Badges para categorização
-- Progress bars para feedback
-- Toast notifications para alertas
+/* Contextos específicos */
+--support-files: blue-50/blue-200
+--template-file: green-50/green-200
+```
 
-## 🔄 Estado da Aplicação
+### Componentes Responsivos
+```css
+/* Breakpoints */
+sm: 640px   /* Mobile */
+md: 768px   /* Tablet */
+lg: 1024px  /* Desktop */
+xl: 1280px  /* Large Desktop */
 
-### Contextos Principais
-1. **WorkspaceContext**: Gerencia workspaces e agentes
-2. **AuthContext**: Autenticação do usuário
-3. **ToastContext**: Sistema de notificações
+/* Grid padrão */
+grid-cols-1 md:grid-cols-2 lg:grid-cols-3
+```
 
-### Estados Locais
-- Upload de arquivos com feedback
-- Progresso de geração
-- Conteúdo do documento
-- Filtros e busca
-
-## 🚀 Performance
+## ⚡ Performance
 
 ### Otimizações Implementadas
-- Tree-shaking de ícones Lucide
-- Lazy loading de componentes
-- Memoização de componentes pesados
-- Debounce em campos de busca
+- **Code Splitting**: Lazy loading de páginas
+- **Memoização**: Componentes pesados memoizados
+- **Tree Shaking**: Importação seletiva de ícones
+- **Bundle Optimization**: Minificação automática
+- **Image Optimization**: Compressão de uploads
 
-### Considerações Futuras
-- Virtualização para listas grandes
-- Cache de resultados de OCR
-- Compressão de uploads
-- Service Worker para offline
-
-## 🧪 Testes e Qualidade
-
-### Estrutura de Testes (Recomendada)
-```
-tests/
-├── components/     # Testes de componentes
-├── hooks/         # Testes de hooks
-├── pages/         # Testes de páginas
-└── utils/         # Testes de utilitários
+### React Query Configuration
+```typescript
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos
+      cacheTime: 10 * 60 * 1000, // 10 minutos
+      retry: 3,
+    },
+  },
+});
 ```
 
-### Ferramentas Recomendadas
-- Jest + Testing Library para testes
-- ESLint + Prettier para qualidade de código
-- TypeScript para tipagem estática
+## 🧪 Testes (Estrutura Recomendada)
 
-## 📦 Deploy e CI/CD
+### Componentes
+```typescript
+// Teste de renderização
+test('FileUpload renders correctly', () => {
+  render(<FileUpload {...defaultProps} />);
+  expect(screen.getByText('Arrastar arquivos')).toBeInTheDocument();
+});
+
+// Teste de interação
+test('handles file upload', async () => {
+  const mockOnChange = jest.fn();
+  render(<FileUpload onSupportFilesChange={mockOnChange} />);
+  
+  const input = screen.getByLabelText('upload');
+  fireEvent.change(input, { target: { files: [mockFile] } });
+  
+  await waitFor(() => {
+    expect(mockOnChange).toHaveBeenCalled();
+  });
+});
+```
+
+### Hooks
+```typescript
+test('useAuth provides user context', () => {
+  const { result } = renderHook(() => useAuth(), {
+    wrapper: AuthProvider,
+  });
+  
+  expect(result.current.user).toBeDefined();
+  expect(result.current.signIn).toBeInstanceOf(Function);
+});
+```
+
+## 🚀 Build e Deploy
 
 ### Build de Produção
 ```bash
-npm run build
-```
-
-### Variáveis de Ambiente
-```env
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-```
-
-## 🔧 Configuração de Desenvolvimento
-
-### Pré-requisitos
-- Node.js 18+
-- npm ou yarn
-
-### Instalação
-```bash
+# Instalar dependências
 npm install
-npm run dev
+
+# Build otimizado
+npm run build
+
+# Preview local
+npm run preview
 ```
 
-### Scripts Disponíveis
-- `dev`: Servidor de desenvolvimento
-- `build`: Build de produção
-- `preview`: Preview do build
-- `lint`: Verificação de código
+### Deploy Firebase
+```bash
+# Autenticar
+firebase login
 
-## 📚 Recursos Adicionais
+# Configurar projeto
+firebase use --add
 
-### Documentação Externa
-- [Shadcn/ui Components](https://ui.shadcn.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [React Router](https://reactrouter.com/)
-- [Tesseract.js](https://tesseract.projectnaptha.com/)
+# Deploy completo
+firebase deploy
 
-### Contribuição
-1. Fork do projeto
-2. Criar branch para feature
-3. Commit das mudanças
-4. Push para branch
-5. Abrir Pull Request
+# Deploy específico
+firebase deploy --only hosting
+firebase deploy --only functions
+firebase deploy --only firestore:rules
+```
+
+## 🔄 CI/CD
+
+### GitHub Actions (Exemplo)
+```yaml
+name: Deploy to Firebase
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run build
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          projectId: your-project-id
+```
+
+## 📊 Monitoramento
+
+### Métricas Importantes
+- Tempo de geração de documentos
+- Taxa de sucesso de uploads
+- Uso de agentes vs prompts
+- Erros de OCR
+- Performance de carregamento
+
+### Logging
+```typescript
+// Estrutura de logs
+console.log('Document generation started', {
+  mode: 'agent',
+  agentId: 'abc123',
+  timestamp: new Date().toISOString(),
+  userId: user.uid
+});
+```
+
+## 🔮 Extensibilidade
+
+### Novos Tipos de Prompt
+```typescript
+// Adicionar em src/types/prompts.ts
+const NEW_PROMPT: PredefinedPrompt = {
+  id: 'novo-tipo',
+  name: 'Novo Tipo de Documento',
+  category: 'Nova Categoria',
+  description: 'Descrição do novo tipo'
+};
+```
+
+### Novos Agentes Oficiais
+```typescript
+// Adicionar via Firestore
+const officialAgent: Agent = {
+  name: 'Especialista em Direito Digital',
+  theme: 'Tecnologia e Direito',
+  isOfficial: true,
+  // ...
+};
+```
+
+## 📚 Recursos de Desenvolvimento
+
+### Ferramentas Recomendadas
+- **VSCode** com extensões TypeScript e Tailwind
+- **React DevTools** para debug
+- **Firebase Emulator Suite** para desenvolvimento local
+- **Chrome DevTools** para performance
+
+### Convenções de Código
+- **Naming**: camelCase para variáveis, PascalCase para componentes
+- **Files**: kebab-case para arquivos, PascalCase para componentes
+- **Imports**: Absolute imports com @ alias
+- **Types**: Interfaces explícitas para props
 
 ---
 
-**Última atualização**: Dezembro 2024
-**Versão**: 1.0.0
+**Última atualização**: Dezembro 2024  
+**Versão do React**: 18.3.1  
+**Versão do TypeScript**: 5.0+
