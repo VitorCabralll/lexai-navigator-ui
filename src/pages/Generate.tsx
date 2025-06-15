@@ -157,7 +157,7 @@ Documento criado automaticamente pelo LexAI`;
   ];
 
   return (
-    <>
+    <div>
       <div className="space-y-8">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild className="hover:bg-gray-100">
@@ -187,7 +187,7 @@ Documento criado automaticamente pelo LexAI`;
                     {currentStep > step.number ? (
                       <CheckCircle className="h-6 w-6" />
                     ) : (
-                      <step.icon className="h-5 w-5" />
+                      React.createElement(step.icon, { className: "h-5 w-5" })
                     )}
                     {currentStep === step.number && (
                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
@@ -216,7 +216,7 @@ Documento criado automaticamente pelo LexAI`;
           <Card className="h-fit">
             <CardHeader className="text-center pb-6">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                {steps[currentStep - 1].icon && <steps[currentStep - 1].icon className="h-8 w-8 text-blue-600" />}
+                {React.createElement(steps[currentStep - 1].icon, { className: "h-8 w-8 text-blue-600" })}
               </div>
               <CardTitle className="text-2xl text-gray-900">
                 {steps[currentStep - 1].title}
@@ -463,6 +463,6 @@ Documento criado automaticamente pelo LexAI`;
         </div>
       </div>
       <Toaster />
-    </>
+    </div>
   );
 }
