@@ -9,10 +9,18 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    hmr: {
+      overlay: false, // Disable error overlay to prevent crashes
+    },
   },
   plugins: [
     react(),
-    mode === 'development' && componentTagger(),
+    mode === 'development' && componentTagger({
+      // Optimize tagger configuration
+      exclude: [/node_modules/], // Exclude node_modules
+      include: [/\.tsx?$/], // Only tag TypeScript/React files
+      minify: true, // Reduce metadata size
+    }),
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -31,5 +39,11 @@ export default defineConfig(({ mode }) => ({
         },
       },
     },
+  },
+  optimizeDeps: {
+    exclude: ['lovable-tagger'], // Exclude from pre-bundling to avoid conflicts
+  },
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }, // Suppress common warnings
   },
 }));
