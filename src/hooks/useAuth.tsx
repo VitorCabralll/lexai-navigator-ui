@@ -1,17 +1,17 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
-
-// Mock user data for testing
-const MOCK_USER = {
-  uid: 'mock-user-id',
-  email: 'teste@exemplo.com',
-  displayName: 'Usuário de Teste',
-  photoURL: null,
-  emailVerified: true
-};
+import { 
+  User,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth';
+import { auth, googleProvider } from '@/lib/firebase';
 
 interface AuthContextType {
-  user: any | null;
+  user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
@@ -22,56 +22,32 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate checking for existing session
-    const savedUser = localStorage.getItem('mockUser');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    return unsubscribe;
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock successful login with any email/password
-    const mockUser = { ...MOCK_USER, email };
-    setUser(mockUser);
-    localStorage.setItem('mockUser', JSON.stringify(mockUser));
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
   const signUp = async (email: string, password: string) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Mock successful signup
-    const mockUser = { ...MOCK_USER, email };
-    setUser(mockUser);
-    localStorage.setItem('mockUser', JSON.stringify(mockUser));
+    await createUserWithEmailAndPassword(auth, email, password);
   };
 
   const signInWithGoogle = async () => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Mock successful Google login
-    const mockUser = { 
-      ...MOCK_USER, 
-      email: 'usuario.google@gmail.com',
-      displayName: 'Usuário Google',
-      photoURL: 'https://via.placeholder.com/40'
-    };
-    setUser(mockUser);
-    localStorage.setItem('mockUser', JSON.stringify(mockUser));
+    await signInWithPopup(auth, googleProvider);
   };
 
   const logout = async () => {
-    setUser(null);
-    localStorage.removeItem('mockUser');
+    await signOut(auth);
   };
 
   const value = {
