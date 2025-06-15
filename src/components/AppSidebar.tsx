@@ -7,8 +7,7 @@ import {
   Building2, 
   HelpCircle,
   Plus,
-  Crown,
-  Sparkles
+  Crown
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -32,37 +31,37 @@ const mainItems = [
     title: "Início",
     url: "/dashboard",
     icon: Home,
-    description: "Sua página principal"
   },
   {
     title: "Criar Documento",
     url: "/generate",
     icon: FileText,
-    description: "Fazer novos documentos"
   }
 ];
 
-const manageItems = [
+const workItems = [
   {
     title: "Meus Modelos",
     url: "/agents",
     icon: Users,
-    description: "Ver e gerenciar modelos inteligentes"
   },
   {
     title: "Meu Escritório",
     url: "/workspace",
     icon: Building2,
-    description: "Gerenciar área de trabalho"
   }
 ];
 
-const configItems = [
+const systemItems = [
   {
     title: "Configurações",
     url: "/settings",
     icon: Settings,
-    description: "Preferências e configurações"
+  },
+  {
+    title: "Ajuda",
+    url: "#",
+    icon: HelpCircle,
   }
 ];
 
@@ -71,6 +70,8 @@ export function AppSidebar() {
   const { selectedWorkspace, getAgentsForWorkspace, officialAgents } = useWorkspace();
 
   const workspaceAgents = selectedWorkspace ? getAgentsForWorkspace(selectedWorkspace.id) : [];
+  const totalAgents = workspaceAgents.length;
+  const favoriteAgents = [...officialAgents.slice(0, 1), ...workspaceAgents.slice(0, 1)];
 
   return (
     <Sidebar className="bg-white border-r border-gray-200">
@@ -81,29 +82,15 @@ export function AppSidebar() {
           </div>
           <div>
             <h2 className="font-bold text-xl text-gray-900">LexAI</h2>
-            <p className="text-xs text-gray-500">Sua assistente jurídica</p>
+            <p className="text-xs text-gray-500">
+              {selectedWorkspace ? selectedWorkspace.name : "Assistente jurídica"}
+            </p>
           </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent className="px-4">
-        {/* Workspace Info */}
-        {selectedWorkspace && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-gray-700">Escritório Atual</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border border-blue-200">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <p className="font-semibold text-blue-900 text-sm">{selectedWorkspace.name}</p>
-                </div>
-                <p className="text-xs text-blue-700">Seu ambiente de trabalho jurídico</p>
-              </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {/* Main Actions */}
+        {/* Principal */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-gray-700">Principal</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -122,89 +109,20 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Quick Create */}
+        {/* Trabalho */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-700 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-yellow-500" />
-            Criação Rápida
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <div className="space-y-2">
-              <Button asChild variant="ghost" size="sm" className="w-full justify-start text-xs h-9 hover:bg-blue-50 hover:text-blue-700">
-                <Link to="/generate?step=2&type=peticao">
-                  <FileText className="mr-2 h-3 w-3" />
-                  Nova Petição
-                </Link>
-              </Button>
-              <Button asChild variant="ghost" size="sm" className="w-full justify-start text-xs h-9 hover:bg-green-50 hover:text-green-700">
-                <Link to="/generate?step=2&type=parecer">
-                  <FileText className="mr-2 h-3 w-3" />
-                  Novo Parecer
-                </Link>
-              </Button>
-              <Button asChild variant="ghost" size="sm" className="w-full justify-start text-xs h-9 hover:bg-purple-50 hover:text-purple-700">
-                <Link to="/agents/create">
-                  <Plus className="mr-2 h-3 w-3" />
-                  Novo Modelo
-                </Link>
-              </Button>
-            </div>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Modelos Favoritos */}
-        {(officialAgents.length > 0 || workspaceAgents.length > 0) && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-gray-700">⭐ Modelos Favoritos</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <div className="space-y-1">
-                {officialAgents.slice(0, 2).map((agent) => (
-                  <Button
-                    key={agent.id}
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start text-xs h-9 hover:bg-yellow-50"
-                  >
-                    <Link to={`/generate?step=3&agent=${agent.id}`}>
-                      <Crown className="mr-2 h-3 w-3 text-yellow-500" />
-                      <span className="truncate">{agent.name}</span>
-                    </Link>
-                  </Button>
-                ))}
-                {workspaceAgents.slice(0, 2).map((agent) => (
-                  <Button
-                    key={agent.id}
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start text-xs h-9 hover:bg-blue-50"
-                  >
-                    <Link to={`/generate?step=3&agent=${agent.id}`}>
-                      <Users className="mr-2 h-3 w-3 text-blue-500" />
-                      <span className="truncate">{agent.name}</span>
-                    </Link>
-                  </Button>
-                ))}
-              </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {/* Management */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-700">Gerenciar</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-gray-700">Trabalho</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {manageItems.map((item) => (
+              {workItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location.pathname === item.url}>
                     <Link to={item.url} className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-50 transition-colors">
                       <item.icon className="h-5 w-5" />
                       <span className="font-medium">{item.title}</span>
-                      {item.url === "/agents" && workspaceAgents.length > 0 && (
-                        <Badge variant="secondary" className="ml-auto text-xs bg-blue-100 text-blue-800">
-                          {workspaceAgents.length}
+                      {item.url === "/agents" && totalAgents > 0 && (
+                        <Badge variant="secondary" className="ml-auto text-xs">
+                          {totalAgents}
                         </Badge>
                       )}
                     </Link>
@@ -212,21 +130,64 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
+
+            {/* Modelos Frequentes */}
+            {favoriteAgents.length > 0 && (
+              <div className="mt-4 space-y-1">
+                <p className="text-xs text-gray-500 px-3 mb-2">Acesso Rápido</p>
+                {favoriteAgents.map((agent) => (
+                  <Button
+                    key={agent.id}
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start text-xs h-8 px-3"
+                  >
+                    <Link to={`/generate?agent=${agent.id}`} className="flex items-center gap-2">
+                      <Crown className="h-3 w-3 text-gray-400" />
+                      <span className="truncate">{agent.name}</span>
+                    </Link>
+                  </Button>
+                ))}
+              </div>
+            )}
+
+            {/* Criar Novo Modelo */}
+            <div className="mt-4">
+              <Button 
+                asChild 
+                variant="outline" 
+                size="sm" 
+                className="w-full border-dashed"
+              >
+                <Link to="/agents/create">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Modelo
+                </Link>
+              </Button>
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Configuration */}
+        {/* Sistema */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-700">Configurações</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-gray-700">Sistema</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {configItems.map((item) => (
+              {systemItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                    <Link to={item.url} className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-50 transition-colors">
-                      <item.icon className="h-5 w-5" />
-                      <span className="font-medium">{item.title}</span>
-                    </Link>
+                    {item.url === "#" ? (
+                      <button className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-50 transition-colors w-full text-left">
+                        <item.icon className="h-5 w-5" />
+                        <span className="font-medium">{item.title}</span>
+                      </button>
+                    ) : (
+                      <Link to={item.url} className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <item.icon className="h-5 w-5" />
+                        <span className="font-medium">{item.title}</span>
+                      </Link>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -234,15 +195,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter className="border-t border-gray-100 px-4 py-4">
-        <Button asChild variant="ghost" size="sm" className="w-full justify-start text-xs hover:bg-gray-50">
-          <a href="#" className="flex items-center gap-2">
-            <HelpCircle className="h-4 w-4" />
-            Precisa de ajuda?
-          </a>
-        </Button>
-      </SidebarFooter>
     </Sidebar>
   );
 }
