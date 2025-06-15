@@ -4,14 +4,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, FileText, Bot, Zap, CheckCircle, MessageCircle, Sparkles, Crown, Users } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, ArrowRight, FileText, Bot, Zap, CheckCircle, MessageCircle, Sparkles, Crown, Users, Database } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
-import { FileUpload } from "@/components/FileUpload";
+import { FileUploadModern } from "@/components/FileUploadModern";
 import { GenerationProgress } from "@/components/GenerationProgress";
 import { PromptGrid } from "@/components/PromptGrid";
+import { PromptMarketplace } from "@/components/PromptMarketplace";
 import { ExpandableDocument } from "@/components/ExpandableDocument";
 import { PREDEFINED_PROMPTS } from "@/types/prompts";
+import { AdvancedPrompt, PromptCategory } from "@/types/advancedPrompts";
 import { Toaster } from "@/components/ui/toaster";
 
 interface UploadedFile {
@@ -20,19 +23,77 @@ interface UploadedFile {
   size: number;
   type: string;
   content?: string;
+  status: 'uploading' | 'processing' | 'completed' | 'error';
+  progress: number;
 }
+
+// Mock data for advanced prompts
+const mockAdvancedPrompts: AdvancedPrompt[] = [
+  {
+    id: 'adv-1',
+    title: 'Petição Inicial - Danos Morais Avançada',
+    description: 'Template avançado com análise jurisprudencial automática',
+    category: 'civil',
+    subcategories: ['responsabilidade'],
+    tags: ['danos morais', 'jurisprudência', 'IA'],
+    difficulty: 'advanced',
+    visibility: 'public',
+    author: 'ai-system',
+    authorName: 'Sistema IA',
+    version: '3.0',
+    rating: 4.9,
+    usageCount: 2156,
+    lastUsed: new Date(),
+    createdAt: new Date('2024-01-15'),
+    updatedAt: new Date('2024-03-10'),
+    content: 'Template avançado...',
+    internalPrompt: 'Você é um advogado especialista com acesso a jurisprudência...',
+    metadata: {
+      legalArea: 'Direito Civil',
+      documentType: 'Petição Inicial',
+      complexity: 8,
+      estimatedTime: 20,
+      requiredFields: ['Nome do autor', 'CPF/CNPJ', 'Nome do réu', 'Valor dos danos', 'Fatos'],
+      keywords: ['danos morais', 'responsabilidade', 'jurisprudência']
+    },
+    analytics: {
+      successRate: 0.95,
+      averageRating: 4.9,
+      totalGenerations: 2156,
+      averageGenerationTime: 4.2,
+      feedbackCount: 287,
+      lastMonthUsage: 156
+    },
+    isFavorite: false
+  }
+];
+
+const mockCategories: PromptCategory[] = [
+  {
+    id: 'civil',
+    name: 'Direito Civil',
+    description: 'Contratos, responsabilidade civil, direitos reais',
+    icon: 'file-text',
+    subcategories: [
+      { id: 'contratos', name: 'Contratos', description: 'Elaboração de contratos', promptCount: 25 },
+      { id: 'responsabilidade', name: 'Responsabilidade Civil', description: 'Ações de danos', promptCount: 18 }
+    ],
+    promptCount: 43
+  }
+];
 
 export default function Generate() {
   const [searchParams] = useSearchParams();
   const { agents, officialAgents, selectedWorkspace } = useWorkspace();
   
   const [currentStep, setCurrentStep] = useState(1);
-  const [creationMode, setCreationMode] = useState<"assistant" | "template" | "">(
+  const [creationMode, setCreationMode] = useState<"assistant" | "template" | "advanced" | "">(
     searchParams.get('agent') ? "assistant" : searchParams.get('type') ? "template" : ""
   );
   const [selectedAgent, setSelectedAgent] = useState(searchParams.get('agent') || "");
   const [instructions, setInstructions] = useState("");
   const [selectedPromptId, setSelectedPromptId] = useState(searchParams.get('type') || "");
+  const [selectedAdvancedPrompt, setSelectedAdvancedPrompt] = useState<AdvancedPrompt | null>(null);
   const [additionalInstructions, setAdditionalInstructions] = useState("");
   const [supportFiles, setSupportFiles] = useState<UploadedFile[]>([]);
   const [templateFile, setTemplateFile] = useState<UploadedFile | null>(null);
@@ -61,7 +122,9 @@ export default function Generate() {
     setGeneratedContent("");
     
     // Set document title based on mode
-    if (creationMode === 'template' && selectedPromptId) {
+    if (creationMode === 'advanced' && selectedAdvancedPrompt) {
+      setDocumentTitle(selectedAdvancedPrompt.title);
+    } else if (creationMode === 'template' && selectedPromptId) {
       const prompt = PREDEFINED_PROMPTS.find(p => p.id === selectedPromptId);
       setDocumentTitle(prompt?.name || 'Documento Jurídico');
     } else if (creationMode === 'assistant' && selectedAgent) {
@@ -75,7 +138,34 @@ export default function Generate() {
     
     // Generate content based on mode
     let content = '';
-    if (creationMode === 'assistant') {
+    if (creationMode === 'advanced' && selectedAdvancedPrompt) {
+      content = `${selectedAdvancedPrompt.title.toUpperCase()}
+
+Documento gerado com IA Avançada v${selectedAdvancedPrompt.version}
+Área: ${selectedAdvancedPrompt.metadata.legalArea}
+
+${additionalInstructions ? `SUAS INSTRUÇÕES:\n${additionalInstructions}\n` : ''}
+
+DOCUMENTOS ANALISADOS:
+${supportFiles.length > 0 ? supportFiles.map(f => `- ${f.name}`).join('\n') : 'Nenhum documento anexado.'}
+
+[Documento gerado utilizando prompt avançado com análise jurisprudencial automática]
+
+1. CONSIDERAÇÕES INICIAIS COM ANÁLISE JURISPRUDENCIAL
+Com base na análise automatizada de jurisprudência e nos documentos anexados...
+
+2. FUNDAMENTAÇÃO TÉCNICA AVANÇADA
+${additionalInstructions || 'Análise jurídica detalhada com precedentes...'}
+
+3. CONCLUSÃO TÉCNICA
+Pelos fundamentos expostos e precedentes analisados...
+
+Taxa de sucesso esperada: ${(selectedAdvancedPrompt.analytics.successRate * 100).toFixed(0)}%
+Complexidade: ${selectedAdvancedPrompt.metadata.complexity}/10
+
+---
+Documento criado com LexAI Pro - Prompt ID: ${selectedAdvancedPrompt.id}`;
+    } else if (creationMode === 'assistant') {
       const agent = allAgents.find(a => a.id === selectedAgent);
       content = `DOCUMENTO JURÍDICO GERADO
 
@@ -143,14 +233,41 @@ Documento criado automaticamente pelo LexAI`;
     setSelectedPromptId(promptId);
   };
 
+  const handleAdvancedPromptSelect = (prompt: AdvancedPrompt) => {
+    setSelectedAdvancedPrompt(prompt);
+  };
+
+  const handleAdvancedPromptFavorite = (promptId: string) => {
+    // Handle favorite logic
+    console.log('Favoriting prompt:', promptId);
+  };
+
+  const handleAdvancedPromptUse = (promptId: string) => {
+    const prompt = mockAdvancedPrompts.find(p => p.id === promptId);
+    if (prompt) {
+      setSelectedAdvancedPrompt(prompt);
+    }
+  };
+
   const canProceedStep1 = creationMode !== "";
-  const canProceedStep2 = creationMode === 'assistant' ? selectedAgent : selectedPromptId;
+  const canProceedStep2 = creationMode === 'assistant' ? selectedAgent : 
+                          creationMode === 'advanced' ? selectedAdvancedPrompt : 
+                          selectedPromptId;
   const canProceedStep3 = creationMode === 'assistant' ? instructions.trim() : true;
   const canGenerate = currentStep === 4;
 
   const steps = [
     { number: 1, title: "Como vamos fazer?", description: "Escolha o método", icon: MessageCircle },
-    { number: 2, title: creationMode === 'assistant' ? "Qual modelo usar?" : "Que tipo de documento?", description: "Selecione a opção", icon: creationMode === 'assistant' ? Bot : FileText },
+    { 
+      number: 2, 
+      title: creationMode === 'assistant' ? "Qual modelo usar?" : 
+             creationMode === 'advanced' ? "Qual prompt avançado?" : 
+             "Que tipo de documento?", 
+      description: "Selecione a opção", 
+      icon: creationMode === 'assistant' ? Bot : 
+            creationMode === 'advanced' ? Database : 
+            FileText 
+    },
     { number: 3, title: "Me conte os detalhes", description: "Explique o que precisa", icon: MessageCircle },
     { number: 4, title: "Documentos extras", description: "Anexos opcionais", icon: FileText }
   ];
@@ -252,10 +369,30 @@ Documento criado automaticamente pelo LexAI`;
                         </div>
                       </CardContent>
                     </Card>
+
+                    <Card 
+                      className={`cursor-pointer transition-all hover:shadow-md border-2 ${
+                        creationMode === 'advanced' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setCreationMode('advanced')}
+                    >
+                      <CardContent className="p-6 flex items-start gap-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                          <Database className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg text-gray-900 mb-2">Prompts Avançados (NOVO)</h3>
+                          <p className="text-gray-600">
+                            Use prompts inteligentes com IA avançada e análise jurisprudencial
+                          </p>
+                          <p className="text-sm text-purple-600 mt-2">🚀 Máxima qualidade e precisão</p>
+                        </div>
+                      </CardContent>
+                    </Card>
                     
                     <Card 
                       className={`cursor-pointer transition-all hover:shadow-md border-2 ${
-                        creationMode === 'template' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                        creationMode === 'template' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
                       }`}
                       onClick={() => setCreationMode('template')}
                     >
@@ -276,7 +413,7 @@ Documento criado automaticamente pelo LexAI`;
                 </div>
               )}
 
-              {/* Step 2: Agent/Template Selection */}
+              {/* Step 2: Selection */}
               {currentStep === 2 && creationMode === 'assistant' && (
                 <div className="space-y-6">
                   <Label htmlFor="agent" className="text-lg text-gray-900">Qual modelo você quer usar?</Label>
@@ -322,6 +459,35 @@ Documento criado automaticamente pelo LexAI`;
                 </div>
               )}
 
+              {currentStep === 2 && creationMode === 'advanced' && (
+                <div className="space-y-6">
+                  <Label className="text-lg text-gray-900">Escolha um prompt avançado:</Label>
+                  <div className="max-h-96 overflow-y-auto">
+                    <PromptMarketplace
+                      prompts={mockAdvancedPrompts}
+                      categories={mockCategories}
+                      onPromptSelect={handleAdvancedPromptSelect}
+                      onPromptFavorite={handleAdvancedPromptFavorite}
+                      onPromptUse={handleAdvancedPromptUse}
+                    />
+                  </div>
+                  {selectedAdvancedPrompt && (
+                    <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                      <h4 className="font-medium text-purple-900">Selecionado: {selectedAdvancedPrompt.title}</h4>
+                      <p className="text-sm text-purple-700 mt-1">{selectedAdvancedPrompt.description}</p>
+                      <div className="flex gap-2 mt-2">
+                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                          Complexidade: {selectedAdvancedPrompt.metadata.complexity}/10
+                        </span>
+                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                          Sucesso: {(selectedAdvancedPrompt.analytics.successRate * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {currentStep === 2 && creationMode === 'template' && (
                 <div className="space-y-6">
                   <Label className="text-lg text-gray-900">Que tipo de documento você precisa?</Label>
@@ -358,20 +524,30 @@ Documento criado automaticamente pelo LexAI`;
                   ) : (
                     <>
                       <Label htmlFor="additional-instructions" className="text-lg text-gray-900">
-                        Há algo específico que deve aparecer no documento?
+                        {creationMode === 'advanced' 
+                          ? 'Instruções específicas para o prompt avançado:'
+                          : 'Há algo específico que deve aparecer no documento?'
+                        }
                       </Label>
                       <Textarea
                         id="additional-instructions"
-                        placeholder="Exemplo: Preciso mencionar o artigo 6º da Lei de Improbidade e que o réu já foi processado antes pela empresa XYZ em 2020..."
+                        placeholder={
+                          creationMode === 'advanced'
+                            ? "Forneça detalhes específicos do caso: nomes das partes, valores, datas, fatos relevantes..."
+                            : "Exemplo: Preciso mencionar o artigo 6º da Lei de Improbidade e que o réu já foi processado antes pela empresa XYZ em 2020..."
+                        }
                         value={additionalInstructions}
                         onChange={(e) => setAdditionalInstructions(e.target.value)}
                         rows={8}
                         className="resize-none text-base"
                       />
-                      <div className="bg-green-50 p-4 rounded-lg">
-                        <p className="text-sm text-green-800">
-                          <strong>💡 Dica:</strong> Se você não tem certeza, pode deixar em branco. 
-                          Eu crio um documento padrão baseado no tipo escolhido.
+                      <div className={`p-4 rounded-lg ${creationMode === 'advanced' ? 'bg-purple-50' : 'bg-green-50'}`}>
+                        <p className={`text-sm ${creationMode === 'advanced' ? 'text-purple-800' : 'text-green-800'}`}>
+                          <strong>💡 Dica:</strong> {
+                            creationMode === 'advanced'
+                              ? 'O prompt avançado utilizará IA para analisar jurisprudência automaticamente. Forneça os detalhes do caso.'
+                              : 'Se você não tem certeza, pode deixar em branco. Eu crio um documento padrão baseado no tipo escolhido.'
+                          }
                         </p>
                       </div>
                     </>
@@ -390,11 +566,12 @@ Documento criado automaticamente pelo LexAI`;
                       Isso é opcional, mas pode ajudar a criar um documento ainda melhor
                     </p>
                   </div>
-                  <FileUpload
-                    onSupportFilesChange={setSupportFiles}
-                    onTemplateFileChange={setTemplateFile}
-                    onStrictModeChange={setStrictMode}
-                    strictMode={strictMode}
+                  <FileUploadModern
+                    onFilesChange={setSupportFiles}
+                    maxFiles={10}
+                    maxSize={50}
+                    enableOCR={true}
+                    enablePreview={true}
                   />
                 </div>
               )}
