@@ -3,11 +3,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Upload, FileText, Bot, CheckCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { LEGAL_SUBJECTS } from "@/types/legalSubjects";
 
 export default function CreateAgent() {
   const [agentName, setAgentName] = useState("");
@@ -177,16 +179,21 @@ export default function CreateAgent() {
               />
             </div>
 
-            {/* Tema/Especialidade */}
+            {/* Tema/Especialidade com Select */}
             <div className="space-y-2">
-              <Label htmlFor="agent-theme">Tema/Especialidade</Label>
-              <Input
-                id="agent-theme"
-                placeholder="Ex: Direito Ambiental, Direito Penal..."
-                value={agentTheme}
-                onChange={(e) => setAgentTheme(e.target.value)}
-                required
-              />
+              <Label htmlFor="agent-theme">Matéria Jurídica</Label>
+              <Select value={agentTheme} onValueChange={setAgentTheme} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a matéria jurídica" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {LEGAL_SUBJECTS.map((subject) => (
+                    <SelectItem key={subject} value={subject}>
+                      {subject}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Botões */}
