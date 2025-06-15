@@ -6,9 +6,16 @@ import "./index.css";
 
 // Apply theme from localStorage or default to dark mode
 const savedTheme = localStorage.getItem("theme") || "dark";
-document.documentElement.classList.add(savedTheme);
+if (savedTheme) {
+  document.documentElement.classList.add(savedTheme);
+}
 
-createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  throw new Error("Root element not found");
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <App />
   </StrictMode>

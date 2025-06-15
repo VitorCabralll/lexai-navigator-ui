@@ -1,8 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { Document, Packer, Paragraph, TextRun } from "docx";
-import jsPDF from "jspdf";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ExportButtonsProps {
   content: string;
@@ -10,8 +9,13 @@ interface ExportButtonsProps {
 }
 
 export function ExportButtons({ content, filename }: ExportButtonsProps) {
+  const { toast } = useToast();
+
   const exportAsDocx = async () => {
     try {
+      // Dynamic import to avoid build issues
+      const { Document, Packer, Paragraph, TextRun } = await import("docx");
+      
       const doc = new Document({
         sections: [{
           properties: {},
@@ -28,32 +32,70 @@ export function ExportButtons({ content, filename }: ExportButtonsProps) {
       const link = document.createElement('a');
       link.href = url;
       link.download = `${filename}.docx`;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
+
+      toast({
+        title: "Sucesso",
+        description: "Documento exportado como DOCX",
+      });
     } catch (error) {
       console.error('Erro ao exportar DOCX:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao exportar documento DOCX",
+        variant: "destructive",
+      });
     }
   };
 
-  const exportAsPdf = () => {
+  const exportAsPdf = async () => {
     try {
+      // Dynamic import to avoid build issues
+      const { default: jsPDF } = await import("jspdf");
+      
       const pdf = new jsPDF();
       const lines = content.split('\n');
       const pageHeight = pdf.internal.pageSize.height;
-      let y = 20;
+      const lineHeight = 7;
+      const margin = 20;
+      let y = margin;
 
       lines.forEach(line => {
-        if (y > pageHeight - 20) {
+        if (y > pageHeight - margin) {
           pdf.addPage();
-          y = 20;
+          y = margin;
         }
-        pdf.text(line, 10, y);
-        y += 7;
+        
+        // Handle long lines by wrapping text
+        const maxWidth = pdf.internal.pageSize.width - (margin * 2);
+        const splitText = pdf.splitTextToSize(line || " ", maxWidth);
+        
+        splitText.forEach((textLine: string) => {
+          if (y > pageHeight - margin) {
+            pdf.addPage();
+            y = margin;
+          }
+          pdf.text(textLine, margin, y);
+          y += lineHeight;
+        });
       });
 
       pdf.save(`${filename}.pdf`);
+
+      toast({
+        title: "Sucesso",
+        description: "Documento exportado como PDF",
+      });
     } catch (error) {
       console.error('Erro ao exportar PDF:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao exportar documento PDF",
+        variant: "destructive",
+      });
     }
   };
 
