@@ -16,6 +16,7 @@ import CreateAgent from '@/pages/CreateAgent';
 import Settings from '@/pages/Settings';
 import Workspace from '@/pages/Workspace';
 import Welcome from '@/pages/onboarding/Welcome';
+import LegalProfile from '@/pages/onboarding/LegalProfile';
 import CreateWorkspace from '@/pages/onboarding/CreateWorkspace';
 import WorkspaceQuestion from '@/pages/onboarding/WorkspaceQuestion';
 import NotFound from '@/pages/NotFound';
@@ -51,6 +52,7 @@ function App() {
                     {/* Onboarding routes */}
                     <Route path="/onboarding" element={<Navigate to="/onboarding/welcome" replace />} />
                     <Route path="/onboarding/welcome" element={<Welcome />} />
+                    <Route path="/onboarding/legal-profile" element={<LegalProfile />} />
                     <Route path="/onboarding/workspace-question" element={<WorkspaceQuestion />} />
                     <Route path="/onboarding/create-workspace" element={<CreateWorkspace />} />
 

@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, FileText, Users, Zap } from "lucide-react";
+import { Brain, FileText, Users, Zap, Scale, Gavel } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Welcome() {
@@ -18,19 +18,19 @@ export default function Welcome() {
           </div>
           <CardTitle className="text-3xl font-bold">Bem-vindo ao LexAI!</CardTitle>
           <CardDescription className="text-lg">
-            A plataforma de inteligência artificial que revoluciona o trabalho jurídico
+            A plataforma de inteligência artificial desenvolvida especialmente para operadores do direito
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0">
-                <Brain className="h-8 w-8 text-blue-500" />
+                <Scale className="h-8 w-8 text-blue-500" />
               </div>
               <div>
-                <h3 className="font-semibold">Inteligência Artificial Avançada</h3>
+                <h3 className="font-semibold">Especializado em Direito</h3>
                 <p className="text-sm text-muted-foreground">
-                  Utilize IA especializada em direito para automatizar tarefas complexas
+                  IA treinada especificamente para advogados, promotores, juízes e operadores jurídicos
                 </p>
               </div>
             </div>
@@ -40,21 +40,21 @@ export default function Welcome() {
                 <FileText className="h-8 w-8 text-green-500" />
               </div>
               <div>
-                <h3 className="font-semibold">Geração de Documentos</h3>
+                <h3 className="font-semibold">Documentos Jurídicos</h3>
                 <p className="text-sm text-muted-foreground">
-                  Crie contratos, petições e minutas de forma rápida e precisa
+                  Crie petições, pareceres, contratos e outros documentos com precisão técnica
                 </p>
               </div>
             </div>
 
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0">
-                <Users className="h-8 w-8 text-purple-500" />
+                <Gavel className="h-8 w-8 text-purple-500" />
               </div>
               <div>
-                <h3 className="font-semibold">Workspaces Organizados</h3>
+                <h3 className="font-semibold">Agentes por Matéria</h3>
                 <p className="text-sm text-muted-foreground">
-                  Organize seus projetos por área do direito ou cliente
+                  Organize seus agentes de IA por área jurídica: Civil, Penal, Trabalhista e mais
                 </p>
               </div>
             </div>
@@ -64,9 +64,9 @@ export default function Welcome() {
                 <Zap className="h-8 w-8 text-yellow-500" />
               </div>
               <div>
-                <h3 className="font-semibold">Agilidade Extraordinária</h3>
+                <h3 className="font-semibold">Produtividade Jurídica</h3>
                 <p className="text-sm text-muted-foreground">
-                  Reduza em até 80% o tempo gasto em tarefas repetitivas
+                  Reduza drasticamente o tempo em tarefas repetitivas e foque no que realmente importa
                 </p>
               </div>
             </div>
@@ -74,11 +74,11 @@ export default function Welcome() {
 
           <div className="text-center pt-6">
             <Button 
-              onClick={() => navigate("/onboarding/workspace-question")}
+              onClick={() => navigate("/onboarding/legal-profile")}
               size="lg"
               className="w-full md:w-auto"
             >
-              Começar Agora
+              Começar Configuração
             </Button>
           </div>
         </CardContent>

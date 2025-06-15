@@ -1,10 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { LegalSubject } from '@/types/legalSubjects';
 
 export interface Agent {
   id: string;
   name: string;
-  type: string;
+  type: LegalSubject;
   theme: string;
   isOfficial: boolean;
   workspaceId?: string;
@@ -28,6 +29,8 @@ interface WorkspaceContextType {
   addWorkspace: (workspace: Workspace) => void;
   addAgent: (agent: Agent) => void;
   getAgentsForWorkspace: (workspaceId: string) => Agent[];
+  getAgentsByLegalSubject: (workspaceId: string, subject: LegalSubject) => Agent[];
+  getAvailableLegalSubjects: (workspaceId: string) => LegalSubject[];
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -37,7 +40,7 @@ const OFFICIAL_AGENTS: Agent[] = [
   {
     id: 'official-contador',
     name: 'Contador',
-    type: 'Apoio Técnico',
+    type: 'Direito Tributário',
     theme: 'Análises contábeis e financeiras',
     isOfficial: true,
     createdAt: 'Agente oficial'
@@ -45,7 +48,7 @@ const OFFICIAL_AGENTS: Agent[] = [
   {
     id: 'official-engenheiro',
     name: 'Engenheiro',
-    type: 'Apoio Técnico',
+    type: 'Direito Ambiental',
     theme: 'Laudos técnicos e perícias',
     isOfficial: true,
     createdAt: 'Agente oficial'
@@ -53,7 +56,7 @@ const OFFICIAL_AGENTS: Agent[] = [
   {
     id: 'official-medico',
     name: 'Médico',
-    type: 'Apoio Técnico',
+    type: 'Direito Civil',
     theme: 'Pareceres médicos e análises clínicas',
     isOfficial: true,
     createdAt: 'Agente oficial'
@@ -118,6 +121,23 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     return agents.filter(agent => agent.workspaceId === workspaceId);
   };
 
+  const getAgentsByLegalSubject = (workspaceId: string, subject: LegalSubject) => {
+    return agents.filter(agent => 
+      agent.workspaceId === workspaceId && agent.type === subject
+    );
+  };
+
+  const getAvailableLegalSubjects = (workspaceId: string) => {
+    const workspaceAgents = getAgentsForWorkspace(workspaceId);
+    const subjects = new Set<LegalSubject>();
+    
+    workspaceAgents.forEach(agent => {
+      subjects.add(agent.type);
+    });
+    
+    return Array.from(subjects).sort();
+  };
+
   return (
     <WorkspaceContext.Provider value={{
       workspaces,
@@ -127,7 +147,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       setSelectedWorkspace,
       addWorkspace,
       addAgent,
-      getAgentsForWorkspace
+      getAgentsForWorkspace,
+      getAgentsByLegalSubject,
+      getAvailableLegalSubjects
     }}>
       {children}
     </WorkspaceContext.Provider>

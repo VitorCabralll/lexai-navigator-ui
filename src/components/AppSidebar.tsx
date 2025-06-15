@@ -11,10 +11,14 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Settings, FileText, Plus, Building2, Crown } from "lucide-react";
+import { LayoutDashboard, Settings, FileText, Plus, Building2, ChevronDown, ChevronRight } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { Button } from "@/components/ui/button";
+import { LEGAL_SUBJECT_ICONS, LEGAL_SUBJECT_COLORS } from "@/types/legalSubjectIcons";
+import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const mainMenuItems = [
   {
@@ -36,12 +40,28 @@ const mainMenuItems = [
 
 export function AppSidebar() {
   const location = useLocation();
-  const { workspaces, selectedWorkspace, setSelectedWorkspace } = useWorkspace();
+  const { 
+    workspaces, 
+    selectedWorkspace, 
+    setSelectedWorkspace, 
+    getAgentsByLegalSubject,
+    getAvailableLegalSubjects,
+    officialAgents
+  } = useWorkspace();
+  
+  const [expandedSubjects, setExpandedSubjects] = useState<string[]>([]);
 
   const handleWorkspaceSelect = (workspace: any) => {
     setSelectedWorkspace(workspace);
-    // Navegar para o dashboard do workspace
     window.history.pushState({}, '', `/dashboard?workspace=${workspace.id}`);
+  };
+
+  const toggleSubject = (subject: string) => {
+    setExpandedSubjects(prev => 
+      prev.includes(subject) 
+        ? prev.filter(s => s !== subject)
+        : [...prev, subject]
+    );
   };
 
   return (
@@ -116,19 +136,106 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Criar Agente - só aparece se há workspace selecionado */}
+        {/* Agentes por Matéria - só aparece se há workspace selecionado */}
         {selectedWorkspace && (
           <SidebarGroup>
+            <div className="flex items-center justify-between px-2">
+              <SidebarGroupLabel>Agentes por Matéria</SidebarGroupLabel>
+              <Button size="sm" variant="ghost" asChild>
+                <Link to="/agents/create">
+                  <Plus className="h-3 w-3" />
+                </Link>
+              </Button>
+            </div>
             <SidebarGroupContent>
               <SidebarMenu>
+                {/* Agentes Oficiais */}
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link to="/agents/create" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                      <Plus />
-                      <span>Criar Agente</span>
-                    </Link>
-                  </SidebarMenuButton>
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton className="w-full justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-gold rounded-full"></div>
+                          <span>Agentes Oficiais</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Badge variant="secondary" className="h-5 text-xs">
+                            {officialAgents.length}
+                          </Badge>
+                          <ChevronRight className="h-4 w-4" />
+                        </div>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="ml-4 space-y-1">
+                      {officialAgents.map((agent) => {
+                        const IconComponent = LEGAL_SUBJECT_ICONS[agent.type];
+                        const iconColor = LEGAL_SUBJECT_COLORS[agent.type];
+                        return (
+                          <SidebarMenuItem key={agent.id}>
+                            <SidebarMenuButton size="sm" className="pl-4">
+                              <IconComponent className={`h-4 w-4 ${iconColor}`} />
+                              <span className="text-sm">{agent.name}</span>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </CollapsibleContent>
+                  </Collapsible>
                 </SidebarMenuItem>
+
+                {/* Agentes por Matéria */}
+                {getAvailableLegalSubjects(selectedWorkspace.id).map((subject) => {
+                  const agentsInSubject = getAgentsByLegalSubject(selectedWorkspace.id, subject);
+                  const IconComponent = LEGAL_SUBJECT_ICONS[subject];
+                  const iconColor = LEGAL_SUBJECT_COLORS[subject];
+                  const isExpanded = expandedSubjects.includes(subject);
+
+                  return (
+                    <SidebarMenuItem key={subject}>
+                      <Collapsible open={isExpanded} onOpenChange={() => toggleSubject(subject)}>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton className="w-full justify-between">
+                            <div className="flex items-center gap-2">
+                              <IconComponent className={`h-4 w-4 ${iconColor}`} />
+                              <span className="text-sm">{subject}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="secondary" className="h-5 text-xs">
+                                {agentsInSubject.length}
+                              </Badge>
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </div>
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="ml-4 space-y-1">
+                          {agentsInSubject.map((agent) => (
+                            <SidebarMenuItem key={agent.id}>
+                              <SidebarMenuButton size="sm" className="pl-4">
+                                <div className="w-2 h-2 bg-current rounded-full opacity-60"></div>
+                                <span className="text-sm">{agent.name}</span>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          ))}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </SidebarMenuItem>
+                  );
+                })}
+
+                {getAvailableLegalSubjects(selectedWorkspace.id).length === 0 && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link to="/agents/create" className="text-muted-foreground">
+                        <Plus className="h-4 w-4" />
+                        <span className="text-sm">Criar primeiro agente</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
