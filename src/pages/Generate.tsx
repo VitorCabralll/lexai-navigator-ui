@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -176,39 +175,42 @@ Documento criado automaticamente pelo LexAI`;
         {/* Progress Visual Simplificado */}
         <div className="relative">
           <div className="flex items-center justify-between mb-12">
-            {steps.map((step, index) => (
-              <div key={step.number} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <div className={`relative w-12 h-12 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
-                    currentStep >= step.number 
-                      ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg' 
-                      : 'bg-gray-200 text-gray-500'
-                  }`}>
-                    {currentStep > step.number ? (
-                      <CheckCircle className="h-6 w-6" />
-                    ) : (
-                      React.createElement(step.icon, { className: "h-5 w-5" })
-                    )}
-                    {currentStep === step.number && (
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
-                        <Sparkles className="h-2 w-2 text-yellow-800" />
-                      </div>
-                    )}
+            {steps.map((step, index) => {
+              const IconComponent = step.icon;
+              return (
+                <div key={step.number} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div className={`relative w-12 h-12 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+                      currentStep >= step.number 
+                        ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg' 
+                        : 'bg-gray-200 text-gray-500'
+                    }`}>
+                      {currentStep > step.number ? (
+                        <CheckCircle className="h-6 w-6" />
+                      ) : (
+                        <IconComponent className="h-5 w-5" />
+                      )}
+                      {currentStep === step.number && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+                          <Sparkles className="h-2 w-2 text-yellow-800" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-center mt-3">
+                      <p className={`text-sm font-medium ${currentStep >= step.number ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {step.title}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">{step.description}</p>
+                    </div>
                   </div>
-                  <div className="text-center mt-3">
-                    <p className={`text-sm font-medium ${currentStep >= step.number ? 'text-gray-900' : 'text-gray-500'}`}>
-                      {step.title}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">{step.description}</p>
-                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={`flex-1 h-1 mx-6 rounded-full ${
+                      currentStep > step.number ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-gray-200'
+                    }`} />
+                  )}
                 </div>
-                {index < steps.length - 1 && (
-                  <div className={`flex-1 h-1 mx-6 rounded-full ${
-                    currentStep > step.number ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-gray-200'
-                  }`} />
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
