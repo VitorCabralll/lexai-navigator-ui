@@ -9,11 +9,11 @@ import { ArrowLeft, Upload, FileText, Bot, CheckCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
-import { LEGAL_SUBJECTS } from "@/types/legalSubjects";
+import { LEGAL_SUBJECTS, LegalSubject } from "@/types/legalSubjects";
 
 export default function CreateAgent() {
   const [agentName, setAgentName] = useState("");
-  const [agentTheme, setAgentTheme] = useState("");
+  const [agentTheme, setAgentTheme] = useState<LegalSubject | "">("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [step, setStep] = useState(1);
@@ -55,7 +55,7 @@ export default function CreateAgent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!agentName.trim() || !agentTheme.trim() || !selectedFile) return;
+    if (!agentName.trim() || !agentTheme || !selectedFile) return;
 
     setIsAnalyzing(true);
     setStep(2);
@@ -65,10 +65,10 @@ export default function CreateAgent() {
       const newAgent = {
         id: `agent-${Date.now()}`,
         name: agentName,
-        type: agentTheme,
+        type: agentTheme as LegalSubject,
         theme: `Especializado em ${agentTheme.toLowerCase()}`,
         isOfficial: false,
-        workspaceId: selectedWorkspace.id,
+        workspaceId: selectedWorkspace!.id,
         createdAt: new Date().toLocaleDateString()
       };
 
@@ -79,7 +79,7 @@ export default function CreateAgent() {
         description: `${agentName} foi criado e está pronto para uso`,
       });
 
-      navigate(`/dashboard?workspace=${selectedWorkspace.id}`);
+      navigate(`/dashboard?workspace=${selectedWorkspace!.id}`);
     }, 3000);
   };
 
@@ -120,7 +120,7 @@ export default function CreateAgent() {
         <div>
           <h1 className="text-3xl font-bold">Criar Agente</h1>
           <p className="text-muted-foreground">
-            Ambiente: <span className="font-medium">{selectedWorkspace.name}</span>
+            Ambiente: <span className="font-medium">{selectedWorkspace?.name}</span>
           </p>
         </div>
       </div>
@@ -182,7 +182,7 @@ export default function CreateAgent() {
             {/* Tema/Especialidade com Select */}
             <div className="space-y-2">
               <Label htmlFor="agent-theme">Matéria Jurídica</Label>
-              <Select value={agentTheme} onValueChange={setAgentTheme} required>
+              <Select value={agentTheme} onValueChange={(value: LegalSubject) => setAgentTheme(value)} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a matéria jurídica" />
                 </SelectTrigger>
@@ -200,7 +200,7 @@ export default function CreateAgent() {
             <div className="flex gap-3">
               <Button 
                 type="submit" 
-                disabled={!agentName.trim() || !agentTheme.trim() || !selectedFile}
+                disabled={!agentName.trim() || !agentTheme || !selectedFile}
                 className="flex-1"
               >
                 <Bot className="mr-2 h-4 w-4" />
