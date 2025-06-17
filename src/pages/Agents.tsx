@@ -20,7 +20,6 @@ export default function Agents() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Aqui você implementaria a lógica para criar o agente
-    console.log({ agentName, agentType, description, instructions, isActive });
   };
 
   return (
