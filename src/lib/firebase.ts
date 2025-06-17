@@ -50,7 +50,6 @@ if (isFirebaseConfigured) {
     googleProvider.addScope('email');
     googleProvider.addScope('profile');
 
-    console.log('Firebase inicializado com sucesso');
   } catch (error) {
     console.error('Erro ao inicializar Firebase:', error);
   }
