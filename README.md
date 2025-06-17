@@ -133,6 +133,7 @@ Siga o guia detalhado em [FIREBASE_SETUP.md](./FIREBASE_SETUP.md) para:
 - **[API.md](./API.md)** - Documentação de APIs e integrações
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Guia de deploy
 - **[FIREBASE_SETUP.md](./FIREBASE_SETUP.md)** - Configuração Firebase
+- **[FIREBASE_EMULATORS.md](./FIREBASE_EMULATORS.md)** - Executar Firebase Emulator Suite
 
 ## 🎯 Como Usar
 
