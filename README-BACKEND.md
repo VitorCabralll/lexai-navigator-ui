@@ -143,6 +143,21 @@ Gera documento usando IA.
 }
 ```
 
+### POST `/ocr`
+Realiza OCR no arquivo de imagem enviado e retorna o texto extraído.
+
+**Parâmetros:**
+- `file`: Imagem JPG, PNG, GIF, BMP ou TIFF (multipart)
+
+**Response:**
+```json
+{
+  "success": true,
+  "text": "Conteúdo OCR",
+  "confidence": 92.3
+}
+```
+
 ## 🔒 Segurança
 
 ### Autenticação

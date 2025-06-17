@@ -352,9 +352,15 @@ const generateDocument = async (request: GenerationRequest): Promise<GenerationR
 
 ### OCR Service
 ```typescript
-// POST /api/ocr
+// POST /ocr
 const processOCR = async (file: File): Promise<{ text: string; confidence: number }> => {
-  // Implementação alternativa ao Tesseract local
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch('/ocr', {
+    method: 'POST',
+    body: formData
+  });
+  return res.json();
 };
 ```
 
